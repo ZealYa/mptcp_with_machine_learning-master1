@@ -2527,20 +2527,7 @@ std::vector<Ptr<MpTcpSubflow> > MpTcpMetaSocket::GetCollectedSubflows() const {
 }
 
 std::vector<Ptr<MpTcpSubflow> > MpTcpMetaSocket::GetMax_w_Subflows() const {
-	int max_w=0;
-	for(int i =0 ;i<m_subflows.size();i++){
-		if(m_subflows[i]->GetTcb()->GetCwnd()>max_w){
-			max_w=m_subflows[i]->GetTcb()->GetCwnd();
-		}
-	}
 
-	for (SubflowList::iterator it = m_activeSubflows.begin(); it != m_activeSubflows.end(); ++it)
-    {
-	    Ptr<MpTcpSubflow> subflow = (*it);
-	    if(subflow->GetTcb()->GetCwnd()==max_w){
-	    	m_max_w_Subflows.push_back(subflow);
-	    }
-	}
 //	for(int i =0 ;i<m_subflows.size();i++){
 //		if(m_subflows[i]->GetTcb()->GetCwnd()==max_w){
 //			Ptr<MpTcpSubflow> subflow=CopyObject(m_subflows[i]);
@@ -2552,6 +2539,32 @@ std::vector<Ptr<MpTcpSubflow> > MpTcpMetaSocket::GetMax_w_Subflows() const {
 
 std::vector<Ptr<MpTcpSubflow> > MpTcpMetaSocket::GetBestSubflows() const {
 	return m_bestSubflows;
+}
+
+bool MpTcpMetaSocket::UpdateBestSubflows() {
+	return true;
+}
+
+bool MpTcpMetaSocket::UpdateMax_w_Subflows() {
+	int max_w=0;
+	for(int i =0 ;i<m_subflows.size();i++){
+		if(m_subflows[i]->GetTcb()->GetCwnd()>max_w){
+			max_w=m_subflows[i]->GetTcb()->GetCwnd();
+		}
+	}
+
+	for (SubflowList::iterator it = m_activeSubflows.begin(); it != m_activeSubflows.end(); ++it)
+	{
+		Ptr<MpTcpSubflow> subflow = (*it);
+		if(subflow->GetTcb()->GetCwnd()==max_w){
+		    m_max_w_Subflows.push_back(subflow);
+		}
+	}
+	return true;
+}
+
+bool MpTcpMetaSocket::UpdateCollectedSubflows() {
+	return true;
 }
 
 // Hong Jiaming: currently, it's randomly choosed. In the feature, decision made by RL should be passed in

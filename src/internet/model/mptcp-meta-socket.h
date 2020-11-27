@@ -151,6 +151,21 @@ public:
    */
   bool UpdateWindowSize (uint32_t windowSize);
 
+  /**
+     * Called by a sublflow to update the receive window size
+     */
+  bool UpdateBestSubflows ();
+
+  /**
+     * Called by a sublflow to update the receive window size
+     */
+  bool UpdateMax_w_Subflows ();
+
+  /**
+     * Called by a sublflow to update the receive window size
+     */
+  bool UpdateCollectedSubflows ();
+
   /*
    * Whether or not to append a subflow tag to the outgoing packets
    */
