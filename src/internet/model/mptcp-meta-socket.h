@@ -217,6 +217,39 @@ public:
    * return Number of connected subflows (that is that ran the 3whs)
    */
   uint32_t GetNActiveSubflows() const;
+/**
+ *
+ * Let rtt_r be the round-trip time observed on path r (e.g. the
+smoothed round-trip time used by regular TCP) and w_r be the
+congestion windows on path r. We denote by best_paths the set of
+paths r in all_paths that have the maximum value of l_r*l_r/rtt_r, by
+max_w_paths the set of paths r in all_paths with largest w_r, and by
+collected_paths the set of best paths that do not have maximum window
+size, i.e.:
+- best_paths = { r | r = arg max_{p in all_paths} (l_p*l_p/rtt_p) }
+- max_w_paths = { r | r = arg max_{p in all_paths} (w_p) }
+- collected_paths = { r | r in best_paths and not in max_w_paths }.
+where arg max is the argument of maximum, the set of points of the
+given argument for which the given function is maximum. arg max is
+applied over all paths p in all_paths.
+ *
+ */
+
+  /**
+       * return the vector of the best subflows
+       */
+  std::vector<Ptr<MpTcpSubflow>> GetBestSubflows() const;
+  /**
+     * return the vector of the best subflows
+     */
+  std::vector<Ptr<MpTcpSubflow>> GetCollectedSubflows() const;
+
+  /**
+       * return the vector of the best subflows
+       */
+  std::vector<Ptr<MpTcpSubflow>> GetMax_w_Subflows() const;
+
+
 
 
   /**
@@ -675,6 +708,7 @@ protected: // protected methods
   virtual uint64_t GenerateUniqueMpTcpKey();
 
   typedef std::vector<Ptr<MpTcpSubflow>> SubflowList;
+
   SubflowList GetSubflowsWithState(TcpStates_t state);
 
   Callback<void, Ptr<MpTcpSubflow> > m_subflowConnectionSucceeded;  //!< connection succeeded callback
@@ -700,6 +734,10 @@ protected: // protected methods
 
   SubflowList m_subflows;
   SubflowList m_activeSubflows; //Keep track of all the established subflows
+  SubflowList m_bestSubflows;
+  SubflowList m_collectedSubflows;
+  SubflowList m_max_w_Subflows;
+
 
   Ptr<MpTcpSubflow> m_master;
 

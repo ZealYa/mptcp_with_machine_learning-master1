@@ -2503,6 +2503,56 @@ MpTcpMetaSocket::ChooseOneScheduler(TypeId const * const type)
     NS_FATAL_ERROR("Required scheduler not found!");
   }
 }
+/**
+ *
+ * Let rtt_r be the round-trip time observed on path r (e.g. the
+smoothed round-trip time used by regular TCP) and w_r be the
+congestion windows on path r. We denote by best_paths the set of
+paths r in all_paths that have the maximum value of l_r*l_r/rtt_r, by
+max_w_paths the set of paths r in all_paths with largest w_r, and by
+collected_paths the set of best paths that do not have maximum window
+size, i.e.:
+- best_paths = { r | r = arg max_{p in all_paths} (l_p*l_p/rtt_p) }
+- max_w_paths = { r | r = arg max_{p in all_paths} (w_p) }
+- collected_paths = { r | r in best_paths and not in max_w_paths }.
+where arg max is the argument of maximum, the set of points of the
+given argument for which the given function is maximum. arg max is
+applied over all paths p in all_paths.
+ *
+ */
+
+std::vector<Ptr<MpTcpSubflow> > MpTcpMetaSocket::GetCollectedSubflows() const {
+
+	return m_collectedSubflows;
+}
+
+std::vector<Ptr<MpTcpSubflow> > MpTcpMetaSocket::GetMax_w_Subflows() const {
+	int max_w=0;
+	for(int i =0 ;i<m_subflows.size();i++){
+		if(m_subflows[i]->GetTcb()->GetCwnd()>max_w){
+			max_w=m_subflows[i]->GetTcb()->GetCwnd();
+		}
+	}
+
+	for (SubflowList::iterator it = m_activeSubflows.begin(); it != m_activeSubflows.end(); ++it)
+    {
+	    Ptr<MpTcpSubflow> subflow = (*it);
+	    if(subflow->GetTcb()->GetCwnd()==max_w){
+	    	m_max_w_Subflows.push_back(subflow);
+	    }
+	}
+//	for(int i =0 ;i<m_subflows.size();i++){
+//		if(m_subflows[i]->GetTcb()->GetCwnd()==max_w){
+//			Ptr<MpTcpSubflow> subflow=CopyObject(m_subflows[i]);
+//			m_max_w_Subflows.push_back(subflow);
+//		}
+//	}
+	return m_max_w_Subflows;
+}
+
+std::vector<Ptr<MpTcpSubflow> > MpTcpMetaSocket::GetBestSubflows() const {
+	return m_bestSubflows;
+}
 
 // Hong Jiaming: currently, it's randomly choosed. In the feature, decision made by RL should be passed in
 void
