@@ -822,6 +822,8 @@ TcpSocketBase::GetPeerName (Address &address) const
   return 0;
 }
 
+
+
 //TcpSocketState*
 //TcpSocketBase::GetTcb(){
 //	return *m_tcb;
@@ -1314,6 +1316,30 @@ TcpSocketBase::ProcessEstablished (Ptr<Packet> packet, const TcpHeader& tcpHeade
     }
 }
 
+uint32_t TcpSocketBase::get1r() const {
+	return l_1r;
+}
+
+void TcpSocketBase::set1r(uint32_t _1r) {
+	l_1r = _1r;
+}
+
+uint32_t TcpSocketBase::get2r() const {
+	return l_2r;
+}
+
+void TcpSocketBase::set2r(uint32_t _2r) {
+	l_2r = _2r;
+}
+
+uint32_t TcpSocketBase::getlr() const {
+	return lr;
+}
+
+void TcpSocketBase::setlr(uint32_t l_r) {
+	lr = l_r;
+}
+
 /* Process the newly received ACK */
 void
 TcpSocketBase::ReceivedAck (Ptr<Packet> packet, const TcpHeader& tcpHeader)
@@ -1334,11 +1360,17 @@ TcpSocketBase::ReceivedAck (Ptr<Packet> packet, const TcpHeader& tcpHeader)
       m_bytesAckedNotProcessed -= m_tcb->m_segmentSize;
     }
 
-  NS_LOG_LOGIC (" Bytes acked: " << bytesAcked <<
+  //update the l_1r for olia
+  this->set2r(this->get2r()+bytesAcked);
+  this->setlr(this->get1r()>this->get2r()?this->get1r():this->get2r());
+
+//  NS_LOG_LOGIC (" Bytes acked: " << bytesAcked <<
+  NS_LOG_UNCOND(" Bytes acked: " << bytesAcked <<
                 " Segments acked: " << segsAcked <<
                 " bytes left: " << m_bytesAckedNotProcessed);
 
-  NS_LOG_DEBUG ("ACK of " << ackNumber <<
+//  NS_LOG_DEBUG
+  NS_LOG_UNCOND("ACK of " << ackNumber <<
                 " SND.UNA=" << m_txBuffer->HeadSequence () <<
                 " SND.NXT=" << m_tcb->m_nextTxSequence);
 
@@ -1350,6 +1382,8 @@ TcpSocketBase::ReceivedAck (Ptr<Packet> packet, const TcpHeader& tcpHeader)
     {
       // There is a DupAck
       ++m_dupAckCount;
+
+
 
       if (m_tcb->m_congState == TcpSocketState::CA_OPEN)
         {
@@ -1375,11 +1409,17 @@ TcpSocketBase::ReceivedAck (Ptr<Packet> packet, const TcpHeader& tcpHeader)
           if ((m_dupAckCount == m_tcpParams->m_retxThresh) && (m_highRxAckMark >= m_recover))
             {
               // triple duplicate ack triggers fast retransmit (RFC2582 sec.3 bullet #1)
-              NS_LOG_DEBUG (TcpSocketState::TcpCongStateName[m_tcb->m_congState] <<
+//              NS_LOG_DEBUG
+			  NS_LOG_UNCOND(TcpSocketState::TcpCongStateName[m_tcb->m_congState] <<
                             " -> RECOVERY");
               m_recover = m_tcb->m_highTxMark;
               m_congestionControl->CongestionStateSet (m_tcb, TcpSocketState::CA_RECOVERY);
               m_tcb->m_congState = TcpSocketState::CA_RECOVERY;
+
+              //considered as loss then we update l_1r and l_2r
+              this->set1r(this->get2r());
+              this->set2r(0);
+              this->setlr(this->get1r()>this->get2r()?this->get1r():this->get2r());
 
               m_tcb->m_ssThresh = m_congestionControl->GetSsThresh (m_tcb,
                                                                     BytesInFlight ());
@@ -2913,7 +2953,12 @@ void
 TcpSocketBase::ReTxTimeout ()
 {
   NS_LOG_FUNCTION (this);
+  NS_LOG_UNCOND("Time out!");
   NS_LOG_LOGIC (this << " ReTxTimeout Expired at time " << Simulator::Now ().GetSeconds ());
+  //considered as loss then we update l_1r and l_2r
+  this->set1r(this->get2r());
+  this->set2r(0);
+
   // If erroneous timeout in closed/timed-wait state, just return
   if (m_state == CLOSED || m_state == TIME_WAIT)
     {

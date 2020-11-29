@@ -114,6 +114,42 @@ double
 MpTcpOLia::ComputeSecondTerm (Ptr<MpTcpMetaSocket> metaSock, Ptr<TcpSocketState> tcb) const
 {
 	NS_LOG_FUNCTION(this);
+	double alpha_r=0;
+//	CollectedPath=metaSock->GetCollectedPath()
+	/*
+	 *alpha_r is calculated as follows:
+		- If r is in collected_paths, then
+					1/number_of_paths
+		alpha_r = --------------------
+					|collected_paths|
+	 * */
+	for(uint32_t i = 0; i < uint32_t(metaSock->GetCollectedSubflows().size()); i++){
+		Ptr<MpTcpSubflow> sFlow = metaSock->GetCollectedSubflows()[i];
+		if(tcb == sFlow->GetTcb()){
+			alpha_r=(1.0/metaSock->GetNActiveSubflows())/metaSock->GetCollectedSubflows().size();
+		}
+	}
+	/*
+	 * - If r is in max_w_paths and if collected_paths is not empty, then
+					1/number_of_paths
+		alpha_r = - -----------------
+					|max_w_paths|
+	 */
+	if(uint32_t(metaSock->GetCollectedSubflows().size())>0){
+		for(uint32_t i = 0; i < uint32_t(metaSock->GetMax_w_Subflows().size()); i++){
+			Ptr<MpTcpSubflow> sFlow = metaSock->GetMax_w_Subflows()[i];
+			if(tcb == sFlow->GetTcb()){
+				alpha_r=-(1.0/metaSock->GetNActiveSubflows())/metaSock->GetMax_w_Subflows().size();
+			}
+		}
+
+	}
+
+	NS_LOG_UNCOND("the alpha:"<<alpha_r);
+
+	return alpha_r/(double)tcb->m_cWnd;
+
+
 }
 
 void
@@ -148,22 +184,24 @@ MpTcpOLia::IncreaseWindow (Ptr<TcpSocketState> tcb, uint32_t segmentsAcked)
   if (tcb->m_cWnd < tcb->m_ssThresh)
   {
     tcb->m_cWnd += tcb->m_segmentSize;
-    NS_LOG_INFO ("In SlowStart, updated tcb " << tcb << " cwnd to " << tcb->m_cWnd << " ssthresh " << tcb->m_ssThresh);
+    NS_LOG_UNCOND("In SlowStart, updated tcb " << tcb << " cwnd to " << tcb->m_cWnd << " ssthresh " << tcb->m_ssThresh);
+//    NS_LOG_INFO ("In SlowStart, updated tcb " << tcb << " cwnd to " << tcb->m_cWnd << " ssthresh " << tcb->m_ssThresh);
   }
   else
   {
+	 NS_LOG_UNCOND("In CongAvoid,");
     Ptr<MpTcpMetaSocket> metaSock = DynamicCast<MpTcpMetaSocket>(tcb->m_socket);
     uint32_t totalCwnd = metaSock->GetTotalCwnd ();
 
     m_alpha = ComputeFirstTerm (metaSock, tcb);
-    double alpha_scale = 1;
+//    double alpha_scale = 1;
 //         The alpha_scale parameter denotes the precision we want for computing alpha
 //                alpha  bytes_acked * MSS_i   bytes_acked * MSS_i
 //          min ( --------------------------- , ------------------- )  (3)
 //                 alpha_scale * cwnd_total              cwnd_i
 
-  double adder = std::min (m_alpha* tcb->m_segmentSize * tcb->m_segmentSize / (totalCwnd* alpha_scale),
-      static_cast<double>((tcb->m_segmentSize * tcb->m_segmentSize) / tcb->m_cWnd.Get ()));
+  double adder = (ComputeFirstTerm(metaSock, tcb)+ComputeSecondTerm(metaSock, tcb))*tcb->m_segmentSize * tcb->m_segmentSize ;
+//  static_cast<double>((tcb->m_segmentSize * tcb->m_segmentSize) / tcb->m_cWnd.Get ()));
 
   // Congestion avoidance mode, increase by (segSize*segSize)/cwnd. (RFC2581, sec.3.1)
     // To increase cwnd for one segSize per RTT, it should be (ackBytes*segSize)/cwnd

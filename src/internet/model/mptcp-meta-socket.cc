@@ -1645,6 +1645,9 @@ MpTcpMetaSocket::ReceivedAck(Ptr<MpTcpSubflow> sf, const SequenceNumber64& dack)
 
   TcpStates_t subflowState = sf->GetState();
 
+  UpdateMax_w_Subflows();
+  UpdateBestSubflows();
+
   if((subflowState == SYN_SENT) && (m_state == MptcpMetaPreEstablished) && sf->IsMaster())
   {
     return;
@@ -2542,28 +2545,73 @@ std::vector<Ptr<MpTcpSubflow> > MpTcpMetaSocket::GetBestSubflows() const {
 }
 
 bool MpTcpMetaSocket::UpdateBestSubflows() {
+	int max=0;
+	for(int i =0 ;i<m_subflows.size();i++){
+		if((m_subflows[i]->lr*m_subflows[i]->lr)/m_subflows[i]->GetRttEstimator()->GetEstimate().GetMicroSeconds()>max){
+			max=(m_subflows[i]->lr*m_subflows[i]->lr)/m_subflows[i]->GetRttEstimator()->GetEstimate().GetMicroSeconds();
+		}
+	}
+	m_bestSubflows.clear();
+	m_collectedSubflows.clear();
+
+	for (SubflowList::iterator it = m_activeSubflows.begin(); it != m_activeSubflows.end(); ++it)
+	{
+		Ptr<MpTcpSubflow> subflow = (*it);
+		if((subflow->lr*subflow->lr)/subflow->GetRttEstimator()->GetEstimate().GetMicroSeconds()==max){
+			m_bestSubflows.push_back(subflow);
+			bool isInMax_w=false;
+			for(SubflowList::iterator it1 = m_max_w_Subflows.begin(); it1 != m_max_w_Subflows.end(); ++it1){
+				if(subflow->GetSubflowId()==(*it1)->GetSubflowId()){
+					isInMax_w=true;
+					break;
+				}
+			}
+			if(isInMax_w==false){
+				m_collectedSubflows.push_back(subflow);
+			}
+		}
+	}
+	if(m_bestSubflows.size()>0){
+		NS_LOG_UNCOND("There are "<<m_bestSubflows.size()<<"best window flow and is:"<<m_bestSubflows[0]->GetSubflowId());
+	}else{
+		NS_LOG_UNCOND("There are no best sf");
+	}
 	return true;
 }
 
 bool MpTcpMetaSocket::UpdateMax_w_Subflows() {
 	int max_w=0;
 	for(int i =0 ;i<m_subflows.size();i++){
+		NS_LOG_UNCOND(i<<"th subflow's cwnd is "<<m_subflows[i]->GetTcb()->GetCwnd());
 		if(m_subflows[i]->GetTcb()->GetCwnd()>max_w){
+
 			max_w=m_subflows[i]->GetTcb()->GetCwnd();
+
+
 		}
 	}
 
+
+	m_max_w_Subflows.clear();
 	for (SubflowList::iterator it = m_activeSubflows.begin(); it != m_activeSubflows.end(); ++it)
 	{
 		Ptr<MpTcpSubflow> subflow = (*it);
 		if(subflow->GetTcb()->GetCwnd()==max_w){
 		    m_max_w_Subflows.push_back(subflow);
+
 		}
 	}
+	if(m_max_w_Subflows.size()>0){
+		NS_LOG_UNCOND("There are "<<m_max_w_Subflows.size()<<"max window flow and is:"<<m_max_w_Subflows[0]->GetSubflowId());
+	}else{
+		NS_LOG_UNCOND("There are no max w sf");
+	}
+
 	return true;
 }
 
 bool MpTcpMetaSocket::UpdateCollectedSubflows() {
+
 	return true;
 }
 

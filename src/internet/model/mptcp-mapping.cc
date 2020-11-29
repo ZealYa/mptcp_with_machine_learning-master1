@@ -214,12 +214,12 @@ MpTcpMappingContainer::~MpTcpMappingContainer(void)
 void
 MpTcpMappingContainer::Dump() const
 {
-  NS_LOG_UNCOND("\n==== Dumping list of mappings ====");
+	NS_LOG_LOGIC("\n==== Dumping list of mappings ====");
   for(MappingSet::const_iterator it = m_mappings.begin(); it != m_mappings.end(); it++ )
   {
-    NS_LOG_UNCOND( **it );
+	  NS_LOG_LOGIC( **it );
   }
-  NS_LOG_UNCOND("==== End of dump ====\n");
+  NS_LOG_LOGIC("==== End of dump ====\n");
 }
 
 Ptr<MpTcpMapping> MpTcpMappingContainer::AddMapping(const SequenceNumber64& dsn,
