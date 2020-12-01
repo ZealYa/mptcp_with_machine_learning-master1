@@ -1364,6 +1364,8 @@ TcpSocketBase::ReceivedAck (Ptr<Packet> packet, const TcpHeader& tcpHeader)
   this->set2r(this->get2r()+bytesAcked);
   this->setlr(this->get1r()>this->get2r()?this->get1r():this->get2r());
 
+
+  NS_LOG_UNCOND(endl<<"Tcp id"<<this->m_tcb<<" received ack!");
 //  NS_LOG_LOGIC (" Bytes acked: " << bytesAcked <<
   NS_LOG_UNCOND(" Bytes acked: " << bytesAcked <<
                 " Segments acked: " << segsAcked <<
@@ -1373,6 +1375,7 @@ TcpSocketBase::ReceivedAck (Ptr<Packet> packet, const TcpHeader& tcpHeader)
   NS_LOG_UNCOND("ACK of " << ackNumber <<
                 " SND.UNA=" << m_txBuffer->HeadSequence () <<
                 " SND.NXT=" << m_tcb->m_nextTxSequence);
+  NS_LOG_UNCOND("Dupack count:"<<m_dupAckCount);
 
   m_tcb->m_lastAckedSeq = ackNumber;
 
@@ -2771,7 +2774,7 @@ void
 TcpSocketBase::ReceivedData (Ptr<Packet> p, const TcpHeader& tcpHeader)
 {
   NS_LOG_FUNCTION (this << tcpHeader);
-  NS_LOG_DEBUG ("Data segment, seq=" << tcpHeader.GetSequenceNumber () <<
+  NS_LOG_UNCOND ("Data segment, seq=" << tcpHeader.GetSequenceNumber () <<
                 " pkt size=" << p->GetSize () );
 
   // Put into Rx buffer
@@ -2848,7 +2851,7 @@ TcpSocketBase::EstimateRtt (const TcpHeader& tcpHeader)
         ts = DynamicCast<TcpOptionTS> (tcpHeader.GetOption (TcpOption::TS));
         // Kind of strange. RTT
         m = TcpOptionTS::ElapsedTimeFromTsValue (ts->GetEcho ());
-        // std::cout << "Hong Jiaming 70 timeStamp = " << ts->GetTimestamp () << " echo = " << ts->GetEcho() << " rtt = " << 2*(ts->GetTimestamp() - ts->GetEcho()) << std::endl;
+//         std::cout << "Hong Jiaming 70 timeStamp = " << ts->GetTimestamp () << " echo = " << ts->GetEcho() << " rtt = " << 2*(ts->GetTimestamp() - ts->GetEcho()) << std::endl;
         // std::cout << "Hong Jiaming 71: m == " << m << std::endl;
       }
       else{

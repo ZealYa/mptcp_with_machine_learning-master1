@@ -199,6 +199,9 @@ MpTcpMetaSocket::MpTcpMetaSocket() :  TcpSocketImpl()
   m_subflowConnectionFailure    = MakeNullCallback<void, Ptr<MpTcpSubflow> >();
   m_subflowAdded = MakeNullCallback<void, Ptr<MpTcpSubflow>, bool> ();
   cwnd_data.open("cwnd_data.txt", ios::trunc);
+  rtt_data.open("rtt_data.txt", ios::trunc);
+
+
 
   m_tcpParams->m_mptcpEnabled = true;
 //  outfile("out.txt", ios::trunc);
@@ -254,6 +257,8 @@ MpTcpMetaSocket::MpTcpMetaSocket(const MpTcpMetaSocket& sock) : TcpSocketImpl(so
   GenerateUniqueMpTcpKey();
 
   cwnd_data.open("cwnd_data.txt", ios::trunc);
+  rtt_data.open("rtt_data.txt", ios::trunc);
+//  throughput_data.open("throughput_data.txt", ios::trunc);
 
   // Reset all callbacks to null
   Callback<void, Ptr<MpTcpMetaSocket>> vPS = MakeNullCallback<void, Ptr<MpTcpMetaSocket>> ();
@@ -273,6 +278,8 @@ MpTcpMetaSocket::~MpTcpMetaSocket(void)
   CancelAllEvents();
 
   cwnd_data.close();
+//  throughput_data.close();
+  rtt_data.close();
   m_subflowConnectionSucceeded = MakeNullCallback<void, Ptr<MpTcpSubflow> >();
   m_subflowConnectionFailure = MakeNullCallback<void, Ptr<MpTcpSubflow>>();
   m_subflowConnectionCreated = MakeNullCallback<void, Ptr<MpTcpSubflow>, const Address&>();
@@ -674,12 +681,7 @@ MpTcpMetaSocket::OnSubflowUpdateCwnd(Ptr<MpTcpSubflow> subflow, uint32_t oldCwnd
 	NS_LOG_LOGIC("Subflow"<< subflow->m_id<<" updated window from " << oldCwnd << " to " << newCwnd);//matthew
 //	NS_LOG_UNCOND(subflow->m_id<<" "<<Simulator::Now ().GetSeconds ()<<" "<<newCwnd);
 
-	if(cwnd_data.is_open()){
 
-//		cwnd_data<<subflow->m_id<<" "<<Simulator::Now ().GetSeconds ()<<" "<<newCwnd;
-		std::cout<<subflow->m_id<<" "<<Simulator::Now ().GetSeconds ()<<" "<<newCwnd<<endl;
-		cwnd_data<<subflow->m_id<<" "<<Simulator::Now ().GetSeconds ()<<" "<<newCwnd<<endl;
-	}
 
 
   //TODO: this was used to compute total cwnd, that is not really valid for a meta socket.
@@ -805,6 +807,8 @@ MpTcpMetaSocket::CreateSubflow(bool masterSocket)
   //std::cout << "Hong Jiaming 12: in MpTcpMetaSocket::CreateSubflow" << std::endl;
   Ptr<Socket> socket = m_tcp->CreateSocket(m_congestionControl, m_subflowTypeId); // Hong Jiaming: Important
   Ptr<MpTcpSubflow> subflow = DynamicCast<MpTcpSubflow>(socket);
+
+  NS_LOG_UNCOND("subflow created:"<<subflow->m_tcb);
 
   //Set the subflow parameters
   subflow->SetTcpParameters(m_tcpParams);
@@ -1641,12 +1645,49 @@ void
 MpTcpMetaSocket::ReceivedAck(Ptr<MpTcpSubflow> sf, const SequenceNumber64& dack)
 {
 //
-  NS_LOG_FUNCTION("Received DACK " << dack << "from subflow" << sf << "(Enable dupacks:"  << " )");
+  NS_LOG_UNCOND("Received DACK " << dack << "from subflow" << sf << "(Enable dupacks:"  << " )");
 
   TcpStates_t subflowState = sf->GetState();
 
+
   UpdateMax_w_Subflows();
   UpdateBestSubflows();
+
+  if((sf->GetEndpoint()->GetLocalAddress()==Ipv4Address("192.168.9.2"))){//add by matthew ：这里处理方法是确定发送主机的ip地址，然后只打印发送端的throupt
+	  for(uint32_t index = 0; index < this->GetNSubflows(); index++){
+		Ptr<MpTcpSubflow> subflow = this->GetSubflow(index);
+		Ptr<TcpSocketState> tcb = subflow->GetTcb();
+
+		uint32_t subflowWindow = subflow->AvailableWindow(); // AvailableWindow = cWnd - (SND.NXT - SND.UNA)
+
+		if(rtt_data.is_open()){
+
+		//		cwnd_data<<subflow->m_id<<" "<<Simulator::Now ().GetSeconds ()<<" "<<newCwnd;
+
+				std::cout<<subflow->m_id<<" "<<Simulator::Now ().GetSeconds ()<<" "<<subflow->GetRttEstimator()->GetEstimate().GetMicroSeconds()<<endl;
+				rtt_data<<subflow->m_id<<" "<<Simulator::Now ().GetSeconds ()<<" "<<subflow->GetRttEstimator()->GetEstimate().GetMicroSeconds()<<endl;
+		}
+		if(cwnd_data.is_open()){
+
+  //		cwnd_data<<subflow->m_id<<" "<<Simulator::Now ().GetSeconds ()<<" "<<newCwnd;
+			std::cout<<"cwnd:"<<subflow->m_id<<" "<<Simulator::Now ().GetSeconds ()<<" "<<subflow->GetTcb()->GetCwnd()<<endl;
+			cwnd_data<<subflow->m_id<<" "<<Simulator::Now ().GetSeconds ()<<" "<<subflow->GetTcb()->GetCwnd()<<endl;
+		}
+  //      std::cout<<"last ack timestamp:"<<subflow->m_lastAckEvent.GetTs()<<endl;
+  //      socket.add("window"+std::to_string(index), subflowWindow);
+  //      socket.add("cWnd"+std::to_string(index), tcb->m_cWnd);
+  //      socket.add("rWnd"+std::to_string(index), m_rWnd.Get());
+  //      socket.add("lastAckedSeq"+std::to_string(index), tcb->m_lastAckedSeq.GetValue());
+  //      socket.add("highTxMark"+std::to_string(index), tcb->m_highTxMark.Get().GetValue());
+  //      socket.add("rtt"+std::to_string(index), subflow->GetRttEstimator()->GetEstimate().GetMicroSeconds());
+  //      socket.add("unAck"+std::to_string(index), subflow->UnAckDataCount());
+  //      socket.add("availableTxBuffer"+std::to_string(index), subflow->GetTxBuffer()->Available()); // How many bytes usable in txBuffer
+		// std::cout << "Hong Jiaming 15: send rtt=" << subflow->GetRttEstimator()->GetEstimate().GetMicroSeconds() << std::endl;
+	  }
+
+  }
+
+
 
   if((subflowState == SYN_SENT) && (m_state == MptcpMetaPreEstablished) && sf->IsMaster())
   {
@@ -2389,7 +2430,7 @@ MpTcpMetaSocket::SendStates(rl::InterfaceToRL& socket){
 
   uint32_t nbOfSubflows = this->GetNSubflows();
   NS_ASSERT (nbOfSubflows == m_subflows.size()); // Hong Jiaming: Just for debug
-  // std::cout << "Hong Jiaming 21: number of active subflows:" << nbOfSubflows << std::endl;
+  std::cout << "Hong Jiaming 21: number of active subflows:" << nbOfSubflows << std::endl;
   // RttHistory_t
   // socket.add("time", Simulator::Now().GetNanoSeconds());
   socket.add("ssn", seq_num);
@@ -2571,18 +2612,18 @@ bool MpTcpMetaSocket::UpdateBestSubflows() {
 			}
 		}
 	}
-	if(m_bestSubflows.size()>0){
-		NS_LOG_UNCOND("There are "<<m_bestSubflows.size()<<"best window flow and is:"<<m_bestSubflows[0]->GetSubflowId());
-	}else{
-		NS_LOG_UNCOND("There are no best sf");
-	}
+//	if(m_bestSubflows.size()>0){
+//		NS_LOG_UNCOND("There are "<<m_bestSubflows.size()<<"best window flow and is:"<<m_bestSubflows[0]->GetSubflowId());
+//	}else{
+//		NS_LOG_UNCOND("There are no best sf");
+//	}
 	return true;
 }
 
 bool MpTcpMetaSocket::UpdateMax_w_Subflows() {
 	int max_w=0;
 	for(int i =0 ;i<m_subflows.size();i++){
-		NS_LOG_UNCOND(i<<"th subflow's cwnd is "<<m_subflows[i]->GetTcb()->GetCwnd());
+//		NS_LOG_UNCOND(i<<"th subflow's cwnd is "<<m_subflows[i]->GetTcb()->GetCwnd());
 		if(m_subflows[i]->GetTcb()->GetCwnd()>max_w){
 
 			max_w=m_subflows[i]->GetTcb()->GetCwnd();
@@ -2602,9 +2643,9 @@ bool MpTcpMetaSocket::UpdateMax_w_Subflows() {
 		}
 	}
 	if(m_max_w_Subflows.size()>0){
-		NS_LOG_UNCOND("There are "<<m_max_w_Subflows.size()<<"max window flow and is:"<<m_max_w_Subflows[0]->GetSubflowId());
+//		NS_LOG_UNCOND("There are "<<m_max_w_Subflows.size()<<"max window flow and is:"<<m_max_w_Subflows[0]->GetSubflowId());
 	}else{
-		NS_LOG_UNCOND("There are no max w sf");
+//		NS_LOG_UNCOND("There are no max w sf");
 	}
 
 	return true;

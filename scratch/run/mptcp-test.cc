@@ -77,20 +77,20 @@ int main(int argc, char* argv[])
 //  cmd.AddValue("mptcpApp","mptcpApp numbers",s_mptcpApp);
 //  cmd.AddValue("duration","duration",s_duration);
   g_link_a_BW="1000Kbps";
-  g_link_b_BW="1000Kbps";
-  g_link_c_BW="1000Kbps";
-  g_link_a_delay="15ms";
-  g_link_b_delay="5ms";
-  g_link_c_delay="100ms";
-  link_b_BER="0.000002";
-  link_c_BER="0.000002";
-  tcp_buffer_size="25214400";
-  router_b_buffer_size="5000000";
-  router_c_buffer_size="5000000";
+  g_link_b_BW="400Kbps";
+  g_link_c_BW="200Kbps";
+  g_link_a_delay="5ms";
+  g_link_b_delay="3ms";
+  g_link_c_delay="3ms";
+  link_b_BER="0.000005";
+  link_c_BER="0.000005";
+  tcp_buffer_size="26214400";
+  router_b_buffer_size="50000";
+  router_c_buffer_size="50000";
   topology_id="0";
   s_mptcpApp="1";
-  s_protocol="2";
-  s_duration="100";
+//  s_protocol="2";
+  s_duration="100 ";
 
   cmd.Parse(argc, argv);
   g_link_b_BER = std::stod(link_b_BER);
@@ -99,7 +99,7 @@ int main(int argc, char* argv[])
   g_router_b_buffer_size = uint32_t(std::stoi(router_b_buffer_size));
   g_router_c_buffer_size = uint32_t(std::stoi(router_c_buffer_size));
   mptcpApp = uint32_t(std::stoi(s_mptcpApp));
-  protocol = uint32_t(std::stoi(s_protocol));
+//  protocol = uint32_t(std::stoi(s_protocol));
   g_topology_id = uint32_t(std::stoi(topology_id));
   simulationDuration = uint32_t(std::stoi(s_duration));
   std::cout << "Please confirm argv: " << g_link_a_BW << " " << g_link_b_BW << " " << g_link_c_BW << " " << link_b_BER << " "
@@ -168,7 +168,7 @@ NS_LOG_UNCOND("success3");
     std::cout << "Application type: onoff\n";
     if(mptcpApp==1){
     	InstallOnOffApplications(server, client, segmentSizeWithoutHeaders,mptcpApp);
-    	InstallOnOffApplications(other_servers, other_clients, segmentSizeWithoutHeaders,mptcpApp);
+//    	InstallOnOffApplications(other_servers, other_clients, segmentSizeWithoutHeaders,mptcpApp);
     }else{
     	InstallMultiOnOffApplications(server, client, segmentSizeWithoutHeaders,mptcpApp);
 
@@ -192,17 +192,17 @@ NS_LOG_UNCOND("success3");
    AnimationInterface anim ("mptcp-animation.xml");
   // Simulator::Schedule(Seconds(8), &PrintMonitorStates);
 
-  for(int i = 0; i < simulationDuration * 10;i++){
-    Simulator::Schedule(Seconds(i/10.0), &TraceMonitorStates, outputDir);
-  }
-
-  for(auto dev:unstableDevices){
-    Simulator::Schedule(Seconds (30.0), ChangeLinkErrorRate, dev, 1.0);
-  }
-
-  for(auto dev:unstableDevices){
-    Simulator::Schedule(Seconds (40.0), ChangeLinkErrorRate, dev, 0);
-  }
+//  for(int i = 0; i < simulationDuration * 10;i++){
+//    Simulator::Schedule(Seconds(i/10.0), &TraceMonitorStates, outputDir);
+//  }
+//
+//  for(auto dev:unstableDevices){
+//    Simulator::Schedule(Seconds (30.0), ChangeLinkErrorRate, dev, 1.0);
+//  }
+//
+//  for(auto dev:unstableDevices){
+//    Simulator::Schedule(Seconds (40.0), ChangeLinkErrorRate, dev, 0);
+//  }
 
   Simulator::Stop (Seconds(simulationDuration));
 

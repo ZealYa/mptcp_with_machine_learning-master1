@@ -458,13 +458,6 @@ vector<Ptr<NetDevice>> CreateNetwork5 (uint32_t packetSize,
     // unstableDevices.push_back(linkedDevices.Get(0));
     // unstableDevices.push_back(linkedDevices.Get(1));
 
-    if(g_link_b_BER != 0){
-      std::cout << "Error model installed in link D-A" << std::endl;
-      Ptr<RateErrorModel> ptr_em = CreateObjectWithAttributes<RateErrorModel> ();
-      ptr_em->SetRate(g_link_b_BER);
-      linkedDevices.Get(0)->SetAttribute("ReceiveErrorModel", PointerValue (ptr_em));
-      linkedDevices.Get(1)->SetAttribute("ReceiveErrorModel", PointerValue (ptr_em));
-    }
 
 
 
@@ -480,6 +473,16 @@ vector<Ptr<NetDevice>> CreateNetwork5 (uint32_t packetSize,
     interfaces = addressHelper.Assign(linkedDevices);
     routerInterfaces.Add(interfaces.Get(0));
     clientInterfaces.Add(interfaces.Get(1));
+
+
+    if(g_link_b_BER != 0){
+      std::cout << "Error model installed in link D-A" << std::endl;
+      Ptr<RateErrorModel> ptr_em = CreateObjectWithAttributes<RateErrorModel> ();
+      ptr_em->SetRate(g_link_b_BER);
+      linkedDevices.Get(0)->SetAttribute("ReceiveErrorModel", PointerValue (ptr_em));
+      linkedDevices.Get(1)->SetAttribute("ReceiveErrorModel", PointerValue (ptr_em));
+    }
+
 
     if(g_link_c_BER != 0){
               std::cout << "Error model installed in link D-A" << std::endl;
@@ -614,7 +617,7 @@ void CreateSimplestNetworkWithOtherTraffic (uint32_t packetSize,
     addressHelper.Assign(PointToPointCreate(B, C, DataRate("1000Kbps"), Time("6ms"), packetSize));
 
     addressHelper.SetBase("192.168.9.0", "255.255.255.0");
-    addressHelper.Assign(PointToPointCreate(C, A, DataRate("500Kbps"), Time("150ms"), packetSize));
+    addressHelper.Assign(PointToPointCreate(C, A, DataRate("500Kbps"), Time("15ms"), packetSize));
 
     addressHelper.SetBase("192.168.11.0", "255.255.255.0");
     addressHelper.Assign(PointToPointCreate(C, A, DataRate("500Kbps"), Time("15ms"), packetSize));
@@ -650,37 +653,77 @@ void CreateSimplestNetworkWithOtherTraffic (uint32_t packetSize,
     Ipv4InterfaceContainer other_serversInterfaces;
 
     addressHelper.SetBase("192.168.0.0", "255.255.255.0");
-    linkedDevices = PointToPointCreate(B, C, DataRate("1000Kbps"), Time("6ms"), packetSize);
+    linkedDevices = PointToPointCreate(B, C, DataRate(g_link_a_BW), Time(g_link_a_delay), packetSize);
     interfaces = addressHelper.Assign(linkedDevices);
     serverInterfaces.Add(interfaces.Get(0));
     routerInterfaces.Add(interfaces.Get(1));
 
     addressHelper.SetBase("192.168.9.0", "255.255.255.0");
-    linkedDevices = PointToPointCreate(C, A, DataRate("500Kbps"), Time("6ms"), packetSize);
+    linkedDevices = PointToPointCreate(C, A, DataRate(g_link_b_BW), Time(g_link_b_delay), packetSize, g_router_b_buffer_size);
     interfaces = addressHelper.Assign(linkedDevices);
     routerInterfaces.Add(interfaces.Get(0));
     clientInterfaces.Add(interfaces.Get(1));
 
     addressHelper.SetBase("192.168.11.0", "255.255.255.0");
-    linkedDevices = PointToPointCreate(C, A, DataRate("500Kbps"), Time("6ms"), packetSize);
+    linkedDevices = PointToPointCreate(C, A, DataRate(g_link_c_BW), Time(g_link_c_delay), packetSize, g_router_c_buffer_size);
     addressHelper.Assign(linkedDevices);
     interfaces = addressHelper.Assign(linkedDevices);
     routerInterfaces.Add(interfaces.Get(0));
     clientInterfaces.Add(interfaces.Get(1));
 
     addressHelper.SetBase("192.168.12.0", "255.255.255.0");
-    linkedDevices = PointToPointCreate(E, C, DataRate("1000Kbps"), Time("5ms"), packetSize);
+    linkedDevices = PointToPointCreate(E, C, DataRate(g_link_a_BW), Time(g_link_a_delay), packetSize);
     addressHelper.Assign(linkedDevices);
     interfaces = addressHelper.Assign(linkedDevices);
     other_serversInterfaces.Add(interfaces.Get(0));
     routerInterfaces.Add(interfaces.Get(1));
 
     addressHelper.SetBase("192.168.13.0", "255.255.255.0");
-    linkedDevices = PointToPointCreate(D, A, DataRate("500Kbps"), Time("5ms"), packetSize);
+    linkedDevices = PointToPointCreate(D, A, DataRate(g_link_a_BW), Time(g_link_a_delay), packetSize);
     addressHelper.Assign(linkedDevices);
     interfaces = addressHelper.Assign(linkedDevices);
     other_clientsInterfaces.Add(interfaces.Get(0));
     clientInterfaces.Add(interfaces.Get(1));
+
+    /*
+     *
+     *     addressHelper.SetBase("192.168.0.0", "255.255.255.0");
+    linkedDevices = PointToPointCreate(B, C, DataRate(g_link_a_BW), Time(g_link_a_delay), packetSize);
+    interfaces = addressHelper.Assign(linkedDevices);
+    serverInterfaces.Add(interfaces.Get(0));
+    routerInterfaces.Add(interfaces.Get(1));
+
+    addressHelper.SetBase("192.168.1.0", "255.255.255.0");
+    linkedDevices = PointToPointCreate(C, D, DataRate(g_link_b_BW), Time(g_link_b_delay), packetSize, g_router_b_buffer_size);
+    interfaces = addressHelper.Assign(linkedDevices);
+    routerInterfaces.Add(interfaces.Get(0));
+    routerInterfaces.Add(interfaces.Get(1));
+
+    addressHelper.SetBase("192.168.9.0", "255.255.255.0");
+    linkedDevices = PointToPointCreate(D, A, DataRate(g_link_b_BW), Time(g_link_b_delay), packetSize, g_router_b_buffer_size);
+    interfaces = addressHelper.Assign(linkedDevices);
+    routerInterfaces.Add(interfaces.Get(0));
+    clientInterfaces.Add(interfaces.Get(1));
+    // unstableDevices.push_back(linkedDevices.Get(0));
+    // unstableDevices.push_back(linkedDevices.Get(1));
+
+
+
+
+    addressHelper.SetBase("192.168.2.0", "255.255.255.0");
+    linkedDevices = PointToPointCreate(C, E, DataRate(g_link_c_BW), Time(g_link_c_delay), packetSize, g_router_c_buffer_size);
+    addressHelper.Assign(linkedDevices);
+    interfaces = addressHelper.Assign(linkedDevices);
+    routerInterfaces.Add(interfaces.Get(0));
+    routerInterfaces.Add(interfaces.Get(1));
+
+    addressHelper.SetBase("192.168.11.0", "255.255.255.0");
+    linkedDevices = PointToPointCreate(E, A, DataRate(g_link_c_BW), Time(g_link_c_delay), packetSize, g_router_c_buffer_size);
+    interfaces = addressHelper.Assign(linkedDevices);
+    routerInterfaces.Add(interfaces.Get(0));
+    clientInterfaces.Add(interfaces.Get(1));
+     *
+     */
 
     // Ptr<RateErrorModel> ptr_em = CreateObjectWithAttributes<RateErrorModel> ();
     // ptr_em->SetRate(4*1e-4);

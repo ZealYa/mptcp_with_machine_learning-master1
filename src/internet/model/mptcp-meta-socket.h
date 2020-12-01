@@ -776,6 +776,8 @@ protected: // protected methods
   bool     m_tagSubflows;  //!<Whether or not to add the subflow packet tag
 
   ofstream cwnd_data;
+  ofstream rtt_data;
+
 
   Ptr<MpTcpScheduler> m_scheduler;  //!<
 

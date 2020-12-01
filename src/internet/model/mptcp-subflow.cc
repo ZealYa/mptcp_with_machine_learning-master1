@@ -164,6 +164,7 @@ MpTcpSubflow::MpTcpSubflow(const MpTcpSubflow& sock)
 {
   NS_LOG_FUNCTION (this << &sock);
   NS_LOG_LOGIC ("Invoked the copy constructor");
+  throughput_data.open("throughput_data.txt", ios::trunc);
 }
 
 MpTcpSubflow::MpTcpSubflow () :
@@ -177,10 +178,12 @@ MpTcpSubflow::MpTcpSubflow () :
     m_dssFlags(0)
 {
   NS_LOG_FUNCTION(this);
+  throughput_data.open("throughput_data.txt", ios::trunc);
 }
 
 MpTcpSubflow::~MpTcpSubflow()
 {
+	throughput_data.close();
   NS_LOG_FUNCTION(this);
 }
 
@@ -447,6 +450,22 @@ void MpTcpSubflow::SetSubflowId (uint32_t subflowId)
 uint32_t MpTcpSubflow::GetSubflowId () const
 {
   return m_id;
+}
+
+double MpTcpSubflow::getLastReceivedDataTime() const {
+		return m_lastReceivedDataTime;
+	}
+
+void  MpTcpSubflow::setLastReceivedDataTime(double lastReceivedDataTime) {
+	m_lastReceivedDataTime = lastReceivedDataTime;
+}
+
+uint32_t MpTcpSubflow::getThpt() const {
+		return m_thpt;
+	}
+
+void MpTcpSubflow::setThpt(uint32_t thpt) {
+	m_thpt = thpt;
 }
 
 /*
@@ -1304,6 +1323,22 @@ void
 MpTcpSubflow::ReceivedData(Ptr<Packet> p, const TcpHeader& tcpHeader)
 {
   NS_LOG_FUNCTION (this << tcpHeader);
+  NS_LOG_UNCOND ("Subflow id"<<GetSubflowId()<<"Data segment, seq=" << tcpHeader.GetSequenceNumber () <<
+                  " pkt size=" << p->GetSize () );
+  NS_LOG_UNCOND(p->GetSize()*8/1024/(Simulator::Now ().GetSeconds()-getLastReceivedDataTime()));
+  setThpt(p->GetSize()*8/1024/(Simulator::Now ().GetSeconds()-getLastReceivedDataTime()));
+  setLastReceivedDataTime(Simulator::Now ().GetSeconds());
+
+  std::cout<<"ipv4 address "<<GetEndpoint()->GetLocalAddress()<<endl;
+
+  bool flag=GetEndpoint()->GetLocalAddress()==Ipv4Address("192.168.0.1");
+
+  if(throughput_data.is_open()&&flag){
+
+  //		cwnd_data<<subflow->m_id<<" "<<Simulator::Now ().GetSeconds ()<<" "<<newCwnd;
+//  		std::cout<<subflow->m_id<<" "<<Simulator::Now ().GetSeconds ()<<" "<<newCwnd<<" "<<subflow->GetTcb()->m_congState<<endl;
+  		throughput_data<<GetSubflowId()<<" "<<Simulator::Now ().GetSeconds ()<<" "<<getThpt()<<endl;
+  	}
 
   Ptr<MpTcpMapping> mapping = m_RxMappings.GetMappingForSSN(tcpHeader.GetSequenceNumber());
   bool sendAck = false;

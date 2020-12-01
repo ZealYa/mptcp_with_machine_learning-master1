@@ -175,12 +175,15 @@ RxDrop (Ptr<const Packet> p)
 int 
 main (int argc, char *argv[])
 {
+  CommandLine cmd;
+  cmd.Parse (argc, argv);
+
   NodeContainer nodes;
   nodes.Create (2);
 
   PointToPointHelper pointToPoint;
-  pointToPoint.SetDeviceAttribute ("DataRate", StringValue ("5Mbps"));
-  pointToPoint.SetChannelAttribute ("Delay", StringValue ("2ms"));
+  pointToPoint.SetDeviceAttribute ("DataRate", StringValue ("1000Kbps"));
+  pointToPoint.SetChannelAttribute ("Delay", StringValue ("11ms"));
 
   NetDeviceContainer devices;
   devices = pointToPoint.Install (nodes);
@@ -207,7 +210,7 @@ main (int argc, char *argv[])
   ns3TcpSocket->TraceConnectWithoutContext ("CongestionWindow", MakeCallback (&CwndChange));
 
   Ptr<MyApp> app = CreateObject<MyApp> ();
-  app->Setup (ns3TcpSocket, sinkAddress, 1040, 1000, DataRate ("1Mbps"));
+  app->Setup (ns3TcpSocket, sinkAddress, 1500, 100000, DataRate ("5Mbps"));
   nodes.Get (0)->AddApplication (app);
   app->SetStartTime (Seconds (1.));
   app->SetStopTime (Seconds (20.));
