@@ -59,38 +59,38 @@ int main(int argc, char* argv[])
   std::string s_mptcpApp;
   std::string s_protocol;
   std::string s_duration;
-//  cmd.AddValue("appType", "The type of application to run", appType);
-//  cmd.AddValue("outputDir", "The output directory to write the logs to.", outputDir);
-//  cmd.AddValue("link_a_BW", "Bandwidth of link A.", g_link_a_BW);
-//  cmd.AddValue("link_b_BW", "Bandwidth of link B.", g_link_b_BW);
-//  cmd.AddValue("link_c_BW", "Bandwidth of link C.", g_link_c_BW);
-//  cmd.AddValue("link_a_delay", "Bandwidth of link A.", g_link_a_delay);
-//  cmd.AddValue("link_b_delay", "Bandwidth of link B.", g_link_b_delay);
-//  cmd.AddValue("link_c_delay", "Bandwidth of link C.", g_link_c_delay);
-//  cmd.AddValue("link_b_BER", "The bit error rate of link B.", link_b_BER);
-//  cmd.AddValue("link_c_BER", "The bit error rate of link C.", link_c_BER);
-//  cmd.AddValue("tcp_buffer_size", "The buffer size of tcp and meta-socket", tcp_buffer_size); // settings in SetConfigDefaults, unit is byte
-//  cmd.AddValue("router_b_buffer_size", "The buffer size of router queue", router_b_buffer_size); // settings in mptcp-helper-topology.cc, unit is packet count
-//  cmd.AddValue("router_c_buffer_size", "The buffer size of router queue", router_c_buffer_size); // settings in mptcp-helper-topology.cc, unit is packet count
-//  cmd.AddValue("topology_id", "The id of topology to use", topology_id);
-//  cmd.AddValue("protocol","protocol type",s_protocol);
-//  cmd.AddValue("mptcpApp","mptcpApp numbers",s_mptcpApp);
-//  cmd.AddValue("duration","duration",s_duration);
-  g_link_a_BW="1000Kbps";
-  g_link_b_BW="400Kbps";
-  g_link_c_BW="200Kbps";
-  g_link_a_delay="5ms";
-  g_link_b_delay="3ms";
-  g_link_c_delay="3ms";
-  link_b_BER="0.000005";
-  link_c_BER="0.000005";
-  tcp_buffer_size="26214400";
-  router_b_buffer_size="50000";
-  router_c_buffer_size="50000";
-  topology_id="0";
-  s_mptcpApp="1";
-//  s_protocol="2";
-  s_duration="100 ";
+  cmd.AddValue("appType", "The type of application to run", appType);
+  cmd.AddValue("outputDir", "The output directory to write the logs to.", outputDir);
+  cmd.AddValue("link_a_BW", "Bandwidth of link A.", g_link_a_BW);
+  cmd.AddValue("link_b_BW", "Bandwidth of link B.", g_link_b_BW);
+  cmd.AddValue("link_c_BW", "Bandwidth of link C.", g_link_c_BW);
+  cmd.AddValue("link_a_delay", "Bandwidth of link A.", g_link_a_delay);
+  cmd.AddValue("link_b_delay", "Bandwidth of link B.", g_link_b_delay);
+  cmd.AddValue("link_c_delay", "Bandwidth of link C.", g_link_c_delay);
+  cmd.AddValue("link_b_BER", "The bit error rate of link B.", link_b_BER);
+  cmd.AddValue("link_c_BER", "The bit error rate of link C.", link_c_BER);
+  cmd.AddValue("tcp_buffer_size", "The buffer size of tcp and meta-socket", tcp_buffer_size); // settings in SetConfigDefaults, unit is byte
+  cmd.AddValue("router_b_buffer_size", "The buffer size of router queue", router_b_buffer_size); // settings in mptcp-helper-topology.cc, unit is packet count
+  cmd.AddValue("router_c_buffer_size", "The buffer size of router queue", router_c_buffer_size); // settings in mptcp-helper-topology.cc, unit is packet count
+  cmd.AddValue("topology_id", "The id of topology to use", topology_id);
+  cmd.AddValue("protocol","protocol type",s_protocol);
+  cmd.AddValue("mptcpApp","mptcpApp numbers",s_mptcpApp);
+  cmd.AddValue("duration","duration",s_duration);
+//  g_link_a_BW="100Kbps";
+//  g_link_b_BW="50Kbps";
+//  g_link_c_BW="50Kbps";
+//  g_link_a_delay="10ms";
+//  g_link_b_delay="6ms";
+//  g_link_c_delay="6ms";
+//  link_b_BER="0.000005";
+//  link_c_BER="0.000005";
+//  tcp_buffer_size="262144";
+//  router_b_buffer_size="1";
+//  router_c_buffer_size="1";
+//  topology_id="1";
+//  s_mptcpApp="1";
+////  s_protocol="2";
+//  s_duration="100 ";
 
   cmd.Parse(argc, argv);
   g_link_b_BER = std::stod(link_b_BER);
@@ -105,7 +105,7 @@ int main(int argc, char* argv[])
   std::cout << "Please confirm argv: " << g_link_a_BW << " " << g_link_b_BW << " " << g_link_c_BW << " " << link_b_BER << " "
             << g_tcp_buffer_size << " " << g_router_b_buffer_size << " " << g_router_c_buffer_size << std::endl;
 
-  string linkRate = "100Mbps"; // not used
+  string linkRate = "0.1Mbps"; // not used
   string linkDelay = "10ms"; // not used
 
 
@@ -168,7 +168,7 @@ NS_LOG_UNCOND("success3");
     std::cout << "Application type: onoff\n";
     if(mptcpApp==1){
     	InstallOnOffApplications(server, client, segmentSizeWithoutHeaders,mptcpApp);
-//    	InstallOnOffApplications(other_servers, other_clients, segmentSizeWithoutHeaders,mptcpApp);
+    	InstallOnOffApplications(other_servers, other_clients, segmentSizeWithoutHeaders,0);
     }else{
     	InstallMultiOnOffApplications(server, client, segmentSizeWithoutHeaders,mptcpApp);
 

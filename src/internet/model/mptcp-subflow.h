@@ -245,9 +245,9 @@ public:
 
 	void setLastReceivedDataTime(double lastReceivedDataTime) ;
 
-	uint32_t getThpt() const;
+	double getThpt();
 
-	void setThpt(uint32_t thpt);
+	void setThpt(double thpt);
 
 protected:
   friend class MpTcpMetaSocket;
@@ -385,8 +385,8 @@ protected:
   MpTcpMappingContainer m_TxMappings;  //!< List of mappings to send
   MpTcpMappingContainer m_RxMappings;  //!< List of mappings to receive
   double m_lastReceivedDataTime;//add by matthew
-  uint32_t m_thpt;//add by matthew
-  ofstream throughput_data;
+  double m_thpt;//add by matthew
+//  ofstream throughput_data;
 
 
   Ptr<MpTcpMetaSocket> m_metaSocket;    //!< Meta

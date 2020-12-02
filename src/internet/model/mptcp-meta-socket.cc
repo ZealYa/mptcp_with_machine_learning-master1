@@ -200,6 +200,7 @@ MpTcpMetaSocket::MpTcpMetaSocket() :  TcpSocketImpl()
   m_subflowAdded = MakeNullCallback<void, Ptr<MpTcpSubflow>, bool> ();
   cwnd_data.open("cwnd_data.txt", ios::trunc);
   rtt_data.open("rtt_data.txt", ios::trunc);
+  throughput_data.open("throughput_data.txt", ios::trunc);
 
 
 
@@ -258,7 +259,7 @@ MpTcpMetaSocket::MpTcpMetaSocket(const MpTcpMetaSocket& sock) : TcpSocketImpl(so
 
   cwnd_data.open("cwnd_data.txt", ios::trunc);
   rtt_data.open("rtt_data.txt", ios::trunc);
-//  throughput_data.open("throughput_data.txt", ios::trunc);
+  throughput_data.open("throughput_data.txt", ios::trunc);
 
   // Reset all callbacks to null
   Callback<void, Ptr<MpTcpMetaSocket>> vPS = MakeNullCallback<void, Ptr<MpTcpMetaSocket>> ();
@@ -278,7 +279,7 @@ MpTcpMetaSocket::~MpTcpMetaSocket(void)
   CancelAllEvents();
 
   cwnd_data.close();
-//  throughput_data.close();
+  throughput_data.close();
   rtt_data.close();
   m_subflowConnectionSucceeded = MakeNullCallback<void, Ptr<MpTcpSubflow> >();
   m_subflowConnectionFailure = MakeNullCallback<void, Ptr<MpTcpSubflow>>();
@@ -632,6 +633,38 @@ bool MpTcpMetaSocket::AddToReceiveBuffer(Ptr<MpTcpSubflow> sf,
   return true;
 }
 
+void MpTcpMetaSocket::LogThpt(Ptr<MpTcpSubflow> sf){//add by matthew
+	if((sf->GetEndpoint()->GetLocalAddress()==Ipv4Address("192.168.0.1"))){//add by matthew ：这里处理方法是确定发送主机的ip地址，然后只打印发送端的throupt
+	  	  for(uint32_t index = 0; index < this->GetNSubflows(); index++){
+	  		Ptr<MpTcpSubflow> subflow = this->GetSubflow(index);
+	  		Ptr<TcpSocketState> tcb = subflow->GetTcb();
+
+	  		uint32_t subflowWindow = subflow->AvailableWindow(); // AvailableWindow = cWnd - (SND.NXT - SND.UNA)
+
+	  		if(throughput_data.is_open()){
+
+	  		//		cwnd_data<<subflow->m_id<<" "<<Simulator::Now ().GetSeconds ()<<" "<<newCwnd;
+
+	  				std::cout<<"throughput_data"<<subflow->m_id<<" "<<Simulator::Now ().GetSeconds ()<<" "<<subflow->getThpt()<<endl;
+	  				throughput_data<<subflow->m_id<<" "<<Simulator::Now ().GetSeconds ()<<" "<<subflow->getThpt()<<endl;
+	  		}
+
+	    //      std::cout<<"last ack timestamp:"<<subflow->m_lastAckEvent.GetTs()<<endl;
+	    //      socket.add("window"+std::to_string(index), subflowWindow);
+	    //      socket.add("cWnd"+std::to_string(index), tcb->m_cWnd);
+	    //      socket.add("rWnd"+std::to_string(index), m_rWnd.Get());
+	    //      socket.add("lastAckedSeq"+std::to_string(index), tcb->m_lastAckedSeq.GetValue());
+	    //      socket.add("highTxMark"+std::to_string(index), tcb->m_highTxMark.Get().GetValue());
+	    //      socket.add("rtt"+std::to_string(index), subflow->GetRttEstimator()->GetEstimate().GetMicroSeconds());
+	    //      socket.add("unAck"+std::to_string(index), subflow->UnAckDataCount());
+	    //      socket.add("availableTxBuffer"+std::to_string(index), subflow->GetTxBuffer()->Available()); // How many bytes usable in txBuffer
+	  		// std::cout << "Hong Jiaming 15: send rtt=" << subflow->GetRttEstimator()->GetEstimate().GetMicroSeconds() << std::endl;
+	  	  }
+
+	    }
+
+}
+
 void MpTcpMetaSocket::OnSubflowRecv(Ptr<MpTcpSubflow> sf,
                                     Ptr<Packet> p,
                                     const TcpHeader& tcpHeader,
@@ -642,6 +675,10 @@ void MpTcpMetaSocket::OnSubflowRecv(Ptr<MpTcpSubflow> sf,
 
   NS_LOG_INFO("=> Dumping meta RxBuffer before extraction");
   DumpRxBuffers(sf);
+
+  //add by matthew
+
+
 
   // Remove mappings for contiguous sequence numbers, and notify the application
   // Hong Jiaming: Note that packet is already added in meta-socket's rxBuffer in MpTcpSubflow::ReceivedData

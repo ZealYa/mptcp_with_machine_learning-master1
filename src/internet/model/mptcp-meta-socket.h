@@ -383,6 +383,9 @@ applied over all paths p in all_paths.
   virtual void OnSubflowUpdateCwnd(Ptr<MpTcpSubflow> subflow, uint32_t oldCwnd, uint32_t newCwnd);
 
 
+  virtual void  LogThpt(Ptr<MpTcpSubflow> sf);
+
+
   static void
   NotifySubflowNewState(Ptr<MpTcpMetaSocket> meta,
                         Ptr<MpTcpSubflow> sf,
@@ -777,7 +780,7 @@ protected: // protected methods
 
   ofstream cwnd_data;
   ofstream rtt_data;
-
+  ofstream throughput_data;
 
   Ptr<MpTcpScheduler> m_scheduler;  //!<
 

@@ -58,7 +58,7 @@ MpTcpSocketFactory::SetTcp (Ptr<TcpL4Protocol> tcp)
 Ptr<Socket>
 MpTcpSocketFactory::CreateSocket (void)
 {
-  return m_tcp->CreateSocket (MpTcpOLia::GetTypeId (), MpTcpMetaSocket::GetTypeId());
+  return m_tcp->CreateSocket (MpTcpLia::GetTypeId (), MpTcpMetaSocket::GetTypeId());
 }
 
 void 
