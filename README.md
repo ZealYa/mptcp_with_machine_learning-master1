@@ -12,12 +12,9 @@ CXXFLAGS=" -std=c++11" ./waf --enable-examples configure
 ```
 3.run script
 ```
-bash RL-MPTCP_debug_NS3.sh
+bash MPTCP-CC-Test.sh
 ```
-P.S.
-```
-bash RL-MPTCP_run.sh
-```
+
 runs multiple python program for statistic and analyzing. But lots of path for
 file storage in them is hard coded and only fits for my machine, my bad :(
 
@@ -64,7 +61,3 @@ And this specific simulation can be regarded as IPhone use multiple subflows to 
 >
 >      HMAC-A = HMAC(Key=(Key-A+Key-B), Msg=(R-A+R-B))
 >      HMAC-B = HMAC(Key=(Key-B+Key-A), Msg=(R-B+R-A))
-
-P.S.有问题可以中文交流，对大家都方便。
-
-P.P.S.这个ns3的mptcp模拟还是不完全的，我记忆中问题最大的一处是数据包选择链路A发送后是无法撤销然后选择链路B的。所以会导致当一条链路中断长时间时，整个传输被卡住。我尝试解决但是最后还是放弃了（因为我重点放在了机器学习方面）。你们如果解决了请告诉我，谢谢！
