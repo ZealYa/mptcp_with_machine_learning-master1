@@ -21,26 +21,26 @@
  */
 
 #include "ns3/log.h"
-#include "mptcp-lia.h"
+#include "mptcp-balia.h"
 #include "mptcp-subflow.h"
 #include "mptcp-meta-socket.h"
 
 // #include "rl-data-interface.h"
 
-NS_LOG_COMPONENT_DEFINE ("MpTcpLia");
+NS_LOG_COMPONENT_DEFINE ("MpTcpBalia");
 
 namespace ns3
 {
 
-NS_OBJECT_ENSURE_REGISTERED (MpTcpLia);
+NS_OBJECT_ENSURE_REGISTERED (MpTcpBalia);
 
 TypeId
-MpTcpLia::GetTypeId (void)
+MpTcpBalia::GetTypeId (void)
 {
-  static TypeId tid = TypeId ("ns3::MpTcpLia")
+  static TypeId tid = TypeId ("ns3::MpTcpBalia")
     .SetParent<TcpNewReno> ()
     .SetGroupName ("Internet")
-    .AddConstructor<MpTcpLia> ()
+    .AddConstructor<MpTcpBalia> ()
 //    .AddTraceSource ("Alpha",
 //                     "Value of the alp",
 //                     MakeTraceSourceAccessor (&MpTcpLia::m_alpha),
@@ -52,66 +52,104 @@ MpTcpLia::GetTypeId (void)
 }
 
 TypeId
-MpTcpLia::GetInstanceTypeId (void)
+MpTcpBalia::GetInstanceTypeId (void)
 {
   return GetTypeId ();
 }
 
 
 // TODO we should aggregate CC for the mptcp case ?
-MpTcpLia::MpTcpLia() : TcpNewReno()
-                      , m_alpha (1)
+MpTcpBalia::MpTcpBalia() : TcpNewReno()
 {
   NS_LOG_FUNCTION_NOARGS();
 }
 
-MpTcpLia::~MpTcpLia ()
+MpTcpBalia::~MpTcpBalia ()
 {
   NS_LOG_FUNCTION_NOARGS();
 }
 
 
 std::string
-MpTcpLia::GetName () const
+MpTcpBalia::GetName () const
 {
-  return "MpTcpLia";
+  return "MpTcpBalia";
 }
 
 double
-MpTcpLia::ComputeAlpha (Ptr<MpTcpMetaSocket> metaSock, Ptr<TcpSocketState> tcb) const
+MpTcpBalia::ComputeAlpha_r(Ptr<MpTcpMetaSocket> metaSock, Ptr<const TcpSocketState> tcb) const
 {
-  // this method is called whenever a congestion happen in order to regulate the agressivety of m_subflows
-  // m_alpha = cwnd_total * MAX(cwnd_i / rtt_i^2) / {SUM(cwnd_i / rtt_i))^2}   //RFC 6356 formula (2)
+  //alpha_r = max { x_k } / x_r
+  NS_LOG_FUNCTION(this);
+
+  double max_x_k = 0, x_r = 0;
+
+  NS_ASSERT (metaSock);
+
+  for (uint32_t k = 0; k < metaSock->GetNActiveSubflows(); k++)
+    {
+      Ptr<MpTcpSubflow> sFlow = metaSock->GetActiveSubflow(k);
+
+      if (tcb == sFlow->GetTcb())
+        {
+          double rtt_r = sFlow->GetRttEstimator()->GetEstimate().GetSeconds();
+          double w_r = tcb->m_cWnd.Get();
+          x_r = w_r / rtt_r;
+        }
+
+      uint32_t w_k = sFlow->GetTcb()->m_cWnd.Get();
+      double rtt_k = sFlow->GetRttEstimator()->GetEstimate().GetSeconds();
+      double x_k = w_k / rtt_k;
+
+      if (max_x_k < x_k)
+        max_x_k = x_k;
+    }
+
+  double alpha_r = max_x_k / x_r;
+  return alpha_r;
+}
+
+double
+MpTcpBalia::ComputeIncreaseFactor(Ptr<MpTcpMetaSocket> metaSock, Ptr<TcpSocketState> tcb) const
+{
+
+//(x_r + max{x_k}) * (4 * x_r + max{x_k})
+//---------------------------------------
+//     w_r * (SUM(x_k))^2 * 10
 
   NS_LOG_FUNCTION(this);
 
-  double alpha = 0;
-  double maxi = 0; // Matches the MAX(cwnd_i / rtt_i^2) part
-  double sumi = 0; // SUM(cwnd_i / rtt_i)
-
+  double x_r = 0, max_x_k = 0, sum_x_k = 0;
+  uint32_t w_r = tcb->m_cWnd.Get();
 
   NS_ASSERT (metaSock);
-  // TODO here
-  for (uint32_t i = 0; i < metaSock->GetNActiveSubflows(); i++)
+
+  for (uint32_t k = 0; k < metaSock->GetNActiveSubflows(); k++)
     {
-      Ptr<MpTcpSubflow> sFlow = metaSock->GetActiveSubflow(i);
+      Ptr<MpTcpSubflow> sFlow = metaSock->GetActiveSubflow(k);
 
-      Time time = sFlow->GetRttEstimator()->GetEstimate();
-      double rtt = time.GetSeconds();
-      uint32_t w = sFlow->GetTcb()->m_cWnd.Get();
-      double tmpi = w / (rtt * rtt);
+      if (tcb == sFlow->GetTcb())
+        {
+          double rtt_r = sFlow->GetRttEstimator()->GetEstimate().GetSeconds();
+          x_r = w_r / rtt_r;
+        }
 
-      if (maxi < tmpi)
-        maxi = tmpi;
+      uint32_t w_k = sFlow->GetTcb()->m_cWnd.Get();
+      double rtt_k = sFlow->GetRttEstimator()->GetEstimate().GetSeconds();
+      double x_k = w_k / rtt_k;
 
-      sumi += w / rtt;
+      if (max_x_k < x_k)
+        max_x_k = x_k;
+
+      sum_x_k += x_k;
     }
-  alpha = (metaSock->GetTotalCwnd() * maxi) / (sumi * sumi);
-  return alpha;
+
+  return (x_r + max_x_k) * (4 * x_r + max_x_k) / (w_r * sum_x_k * sum_x_k * 10);
+
 }
 
 void
-MpTcpLia::IncreaseWindow (Ptr<TcpSocketState> tcb, uint32_t segmentsAcked)
+MpTcpBalia::IncreaseWindow (Ptr<TcpSocketState> tcb, uint32_t segmentsAcked)
 {
   NS_LOG_FUNCTION (this);
 
@@ -142,36 +180,36 @@ MpTcpLia::IncreaseWindow (Ptr<TcpSocketState> tcb, uint32_t segmentsAcked)
   if (tcb->m_cWnd < tcb->m_ssThresh)
   {
     tcb->m_cWnd += tcb->m_segmentSize;
-    NS_LOG_INFO ("In SlowStart, updated tcb " << tcb << " cwnd to " << tcb->m_cWnd << " ssthresh " << tcb->m_ssThresh);
+    NS_LOG_UNCOND("In SlowStart, updated tcb " << tcb << " cwnd to " << tcb->m_cWnd << " ssthresh " << tcb->m_ssThresh);
+//    NS_LOG_INFO ("In SlowStart, updated tcb " << tcb << " cwnd to " << tcb->m_cWnd << " ssthresh " << tcb->m_ssThresh);
   }
   else
   {
+	 NS_LOG_UNCOND("In CongAvoid,");
     Ptr<MpTcpMetaSocket> metaSock = DynamicCast<MpTcpMetaSocket>(tcb->m_socket);
-    uint32_t totalCwnd = metaSock->GetTotalCwnd ();
 
-    m_alpha = ComputeAlpha (metaSock, tcb);
-    double alpha_scale = 1;
-//         The alpha_scale parameter denotes the precision we want for computing alpha
-//                alpha  bytes_acked * MSS_i   bytes_acked * MSS_i
-//          min ( --------------------------- , ------------------- )  (3)
-//                 alpha_scale * cwnd_total              cwnd_i
 
-  double adder = std::min (m_alpha* tcb->m_segmentSize * tcb->m_segmentSize / (totalCwnd* alpha_scale),
-      static_cast<double>((tcb->m_segmentSize * tcb->m_segmentSize) / tcb->m_cWnd.Get ()));
+    double adder = ComputeIncreaseFactor(metaSock, tcb) * tcb->m_segmentSize * tcb->m_segmentSize;
 
-  // Congestion avoidance mode, increase by (segSize*segSize)/cwnd. (RFC2581, sec.3.1)
-    // To increase cwnd for one segSize per RTT, it should be (ackBytes*segSize)/cwnd
-
-//    adder = std::max (1.0, adder);
     tcb->m_cWnd += static_cast<uint32_t> (adder);
     NS_LOG_INFO ("In CongAvoid, updated tcb " << tcb << " cwnd to " << tcb->m_cWnd << " ssthresh " << tcb->m_ssThresh);
   }
 }
+uint32_t
+MpTcpBalia::GetSsThresh (Ptr<const TcpSocketState> tcb, uint32_t bytesInFlight)
+{
+  NS_LOG_FUNCTION (this << tcb << bytesInFlight);
+
+  Ptr<MpTcpMetaSocket> metaSock = DynamicCast<MpTcpMetaSocket>(tcb->m_socket);
+
+  return std::max (2.0 * tcb->m_segmentSize, bytesInFlight * (1.0 - std::min(ComputeAlpha_r(metaSock, tcb), 1.5) / 2.0));
+
+}
 
 Ptr<TcpCongestionOps>
-MpTcpLia::Fork ()
+MpTcpBalia::Fork ()
 {
-  return CreateObject<MpTcpLia>();
+  return CreateObject<MpTcpBalia>();
 }
 
 }

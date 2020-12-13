@@ -520,7 +520,7 @@ Ptr<MpTcpSubflow>
 MpTcpMetaSocket::GetActiveSubflow(uint32_t index) const
 {
   NS_ASSERT_MSG(index < GetNActiveSubflows(), "Subflow index is out of range.");
-  return m_subflows[index];
+  return m_activeSubflows[index];
 }
 
 Ptr<MpTcpSubflow> MpTcpMetaSocket::GetMaster ()

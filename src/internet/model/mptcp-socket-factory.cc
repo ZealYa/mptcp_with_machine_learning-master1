@@ -24,6 +24,7 @@
 #include "tcp-congestion-ops.h"
 #include "mptcp-lia.h"
 #include "mptcp-olia.h"
+#include "mptcp-balia.h"
 #include "mptcp-meta-socket.h"
 
 namespace ns3 {
