@@ -15,6 +15,8 @@ NetDeviceContainer PointToPointCreate(Ptr<Node> startNode,
                                       uint32_t packetSize,
                                       uint32_t queueSize = 1);
 
+void link_change2();
+
 void CreateRealNetwork (uint32_t packetSize,
                         NodeContainer& server,
                         NodeContainer& client,

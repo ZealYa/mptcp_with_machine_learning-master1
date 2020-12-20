@@ -45,6 +45,13 @@ MpTcpSocketFactory::GetTypeId (void)
   static TypeId tid = TypeId ("ns3::MpTcpSocketFactory")
                               .SetParent<SocketFactory> ()
                               .SetGroupName ("Internet")
+							  .AddAttribute("MP_CC_algo",
+									  "select a multipath congestion control algorithm",
+									  UintegerValue (0),
+									  MakeUintegerAccessor(&MpTcpSocketFactory::setMpCcAlgo,
+											  &MpTcpSocketFactory::getMpCcAlgo),
+											  MakeUintegerChecker<uint32_t> ())
+
   ;
 return tid;
 }
@@ -55,10 +62,25 @@ MpTcpSocketFactory::SetTcp (Ptr<TcpL4Protocol> tcp)
   m_tcp = tcp;
 }
 
+uint32_t MpTcpSocketFactory::getMpCcAlgo() const {
+		return m_mp_cc_algo;
+	}
+
+	void MpTcpSocketFactory::setMpCcAlgo(uint32_t mpCcAlgo) {
+		m_mp_cc_algo = mpCcAlgo;
+	}
+
 Ptr<Socket>
 MpTcpSocketFactory::CreateSocket (void)
 {
-  return m_tcp->CreateSocket (MpTcpLia::GetTypeId (), MpTcpMetaSocket::GetTypeId());
+  if(getMpCcAlgo()==0){
+	  std::cout<<"LIA!"<<endl;
+	  return m_tcp->CreateSocket (MpTcpLia::GetTypeId (), MpTcpMetaSocket::GetTypeId());
+  }else{
+	  std::cout<<"OLIA!"<<endl;
+	  return m_tcp->CreateSocket (MpTcpOLia::GetTypeId (), MpTcpMetaSocket::GetTypeId());
+  }
+
 }
 
 void 

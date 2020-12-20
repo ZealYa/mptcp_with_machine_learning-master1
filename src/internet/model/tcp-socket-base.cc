@@ -1363,19 +1363,20 @@ TcpSocketBase::ReceivedAck (Ptr<Packet> packet, const TcpHeader& tcpHeader)
   //update the l_1r for olia
   this->set2r(this->get2r()+bytesAcked);
   this->setlr(this->get1r()>this->get2r()?this->get1r():this->get2r());
+  NS_LOG_UNCOND("RTT:"<<this->GetRttEstimator()->GetEstimate().GetMicroSeconds()<<endl);
 
 
-  NS_LOG_UNCOND(endl<<"Tcp id"<<this->m_tcb<<" received ack!");
+//  NS_LOG_UNCOND(endl<<"Tcp id"<<this->m_tcb<<" received ack!");
 //  NS_LOG_LOGIC (" Bytes acked: " << bytesAcked <<
-  NS_LOG_UNCOND(" Bytes acked: " << bytesAcked <<
-                " Segments acked: " << segsAcked <<
-                " bytes left: " << m_bytesAckedNotProcessed);
+//  NS_LOG_UNCOND(" Bytes acked: " << bytesAcked <<
+//                " Segments acked: " << segsAcked <<
+//                " bytes left: " << m_bytesAckedNotProcessed);
 
 //  NS_LOG_DEBUG
-  NS_LOG_UNCOND("ACK of " << ackNumber <<
-                " SND.UNA=" << m_txBuffer->HeadSequence () <<
-                " SND.NXT=" << m_tcb->m_nextTxSequence);
-  NS_LOG_UNCOND("Dupack count:"<<m_dupAckCount);
+//  NS_LOG_UNCOND("ACK of " << ackNumber <<
+//                " SND.UNA=" << m_txBuffer->HeadSequence () <<
+//                " SND.NXT=" << m_tcb->m_nextTxSequence);
+//  NS_LOG_UNCOND("Dupack count:"<<m_dupAckCount);
 
   m_tcb->m_lastAckedSeq = ackNumber;
 
@@ -1413,8 +1414,8 @@ TcpSocketBase::ReceivedAck (Ptr<Packet> packet, const TcpHeader& tcpHeader)
             {
               // triple duplicate ack triggers fast retransmit (RFC2582 sec.3 bullet #1)
 //              NS_LOG_DEBUG
-			  NS_LOG_UNCOND(TcpSocketState::TcpCongStateName[m_tcb->m_congState] <<
-                            " -> RECOVERY");
+//			  NS_LOG_UNCOND(TcpSocketState::TcpCongStateName[m_tcb->m_congState] <<
+//                            " -> RECOVERY");
               m_recover = m_tcb->m_highTxMark;
               m_congestionControl->CongestionStateSet (m_tcb, TcpSocketState::CA_RECOVERY);
               m_tcb->m_congState = TcpSocketState::CA_RECOVERY;
@@ -2774,8 +2775,8 @@ void
 TcpSocketBase::ReceivedData (Ptr<Packet> p, const TcpHeader& tcpHeader)
 {
   NS_LOG_FUNCTION (this << tcpHeader);
-  NS_LOG_UNCOND ("Data segment, seq=" << tcpHeader.GetSequenceNumber () <<
-                " pkt size=" << p->GetSize () );
+//  NS_LOG_UNCOND ("Data segment, seq=" << tcpHeader.GetSequenceNumber () <<
+//                " pkt size=" << p->GetSize () );
 
   // Put into Rx buffer
   SequenceNumber32 expectedSeq = m_rxBuffer->NextRxSequence ();

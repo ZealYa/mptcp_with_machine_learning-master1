@@ -17,10 +17,16 @@ void CheckAndCreateDirectory(std::string path)
   }
 }
 
+void link_change(){
+	Config::Set("ns3::PointToPointHelper/DataRate",StringValue("100Kbps"));
+
+}
+
 void SetConfigDefaults (std::string linkRate, std::string linkDelay,
                         uint32_t segmentSize, uint32_t segmentSizeWithoutHeaders,
-                        uint32_t queueSize)
+                        uint32_t queueSize,uint32_t mpcc_algo)
 {
+  Config::SetDefault("ns3::MpTcpSocketFactory::MP_CC_algo",UintegerValue(mpcc_algo));
   //The bandwidth delay product
   //uint32_t bdp = DataRate(linkRate).GetBitRate() * Time(linkDelay).GetSeconds() * 4;
   //uint32_t bdpBytes = bdp/8;
