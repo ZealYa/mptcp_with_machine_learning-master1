@@ -845,7 +845,7 @@ MpTcpMetaSocket::CreateSubflow(bool masterSocket)
   Ptr<Socket> socket = m_tcp->CreateSocket(m_congestionControl, m_subflowTypeId); // Hong Jiaming: Important
   Ptr<MpTcpSubflow> subflow = DynamicCast<MpTcpSubflow>(socket);
 
-  NS_LOG_UNCOND("subflow created:"<<subflow->m_tcb);
+//  NS_LOG_UNCOND("subflow created:"<<subflow->m_tcb);
 
   //Set the subflow parameters
   subflow->SetTcpParameters(m_tcpParams);
@@ -1682,7 +1682,7 @@ void
 MpTcpMetaSocket::ReceivedAck(Ptr<MpTcpSubflow> sf, const SequenceNumber64& dack)
 {
 //
-  NS_LOG_UNCOND("Received DACK " << dack << "from subflow" << sf << "(Enable dupacks:"  << " )");
+//  NS_LOG_UNCOND("Received DACK " << dack << "from subflow" << sf << "(Enable dupacks:"  << " )");
 
   TcpStates_t subflowState = sf->GetState();
 
@@ -1793,7 +1793,7 @@ MpTcpMetaSocket::OnTimeWaitTimeOut(void)
 {
   // Would normally call CloseAndNotify
   NS_LOG_LOGIC("Timewait timeout expired");
-  NS_LOG_UNCOND("after timewait timeout, there are still " << m_subflows.size() << " subflows not closed");
+//  NS_LOG_UNCOND("after timewait timeout, there are still " << m_subflows.size() << " subflows not closed");
 
   CloseAndNotify();
 }

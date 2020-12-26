@@ -49,6 +49,11 @@ InternetStackHelper GetInternetStackHelper (bool useStaticRouting = false)
   return stackHelper;
 }
 
+void link_change2(){
+	Config::Set("ns3::PointToPointHelper/DataRate",DataRateValue(DataRate("100Kbps")));
+}
+
+
 NetDeviceContainer PointToPointCreate(Ptr<Node> startNode,
                                       Ptr<Node> endNode,
                                       DataRate linkRate,
@@ -64,6 +69,7 @@ NetDeviceContainer PointToPointCreate(Ptr<Node> startNode,
   PointToPointHelper pointToPoint;
   pointToPoint.SetDeviceAttribute ("DataRate", DataRateValue (linkRate));
   pointToPoint.SetChannelAttribute ("Delay", TimeValue (delay));
+//  Simulator::Schedule(Seconds(20.0),&link_change2,pointToPoint);
 
   // RED queue disc: Random Early Detection. Disc stands for Disciplines
   // Packets received by the Traffic Control layer for transmission to a netdevice
@@ -390,6 +396,9 @@ vector<Ptr<NetDevice>> CreateNetwork5 (uint32_t packetSize,
   middle.Create(3);           // C, D, E
 
   vector<Ptr<NetDevice>> unstableDevices;
+//  Ptr<NetDeviceContainer> LinkCD;
+//  Ptr<NetDeviceContainer> LinkCE;
+
   Ptr<Node> A = client.Get(0);
   Ptr<Node> B = server.Get(0);
   Ptr<Node> C = middle.Get(0);

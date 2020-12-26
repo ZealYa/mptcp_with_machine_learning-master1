@@ -32,7 +32,7 @@ namespace ns3{
   uint32_t g_router_b_buffer_size;
   uint32_t g_router_c_buffer_size;
   uint32_t g_topology_id;
-  uint32_t protocol;
+  uint32_t mpcc_algo;
   uint32_t mptcpApp;
 };
 
@@ -57,7 +57,7 @@ int main(int argc, char* argv[])
   std::string router_c_buffer_size;
   std::string topology_id;
   std::string s_mptcpApp;
-  std::string s_protocol;
+  std::string s_mpcc_algo;
   std::string s_duration;
   cmd.AddValue("appType", "The type of application to run", appType);
   cmd.AddValue("outputDir", "The output directory to write the logs to.", outputDir);
@@ -73,7 +73,7 @@ int main(int argc, char* argv[])
   cmd.AddValue("router_b_buffer_size", "The buffer size of router queue", router_b_buffer_size); // settings in mptcp-helper-topology.cc, unit is packet count
   cmd.AddValue("router_c_buffer_size", "The buffer size of router queue", router_c_buffer_size); // settings in mptcp-helper-topology.cc, unit is packet count
   cmd.AddValue("topology_id", "The id of topology to use", topology_id);
-  cmd.AddValue("protocol","protocol type",s_protocol);
+  cmd.AddValue("mpcc_algo","mpcc_algo type",s_mpcc_algo);
   cmd.AddValue("mptcpApp","mptcpApp numbers",s_mptcpApp);
   cmd.AddValue("duration","duration",s_duration);
 //  g_link_a_BW="100Kbps";
@@ -99,10 +99,13 @@ int main(int argc, char* argv[])
   g_router_b_buffer_size = uint32_t(std::stoi(router_b_buffer_size));
   g_router_c_buffer_size = uint32_t(std::stoi(router_c_buffer_size));
   mptcpApp = uint32_t(std::stoi(s_mptcpApp));
+  mpcc_algo=uint32_t(std::stoi(s_mpcc_algo));
+  Config::SetDefault("ns3::MpTcpSocketFactory::MP_CC_algo",UintegerValue(mpcc_algo));
+
 //  protocol = uint32_t(std::stoi(s_protocol));
   g_topology_id = uint32_t(std::stoi(topology_id));
   simulationDuration = uint32_t(std::stoi(s_duration));
-  std::cout << "Please confirm argv: " << g_link_a_BW << " " << g_link_b_BW << " " << g_link_c_BW << " " << link_b_BER << " "
+  std::cout << "Please confirm argv: mpcc: "<<mpcc_algo<<" "<< g_link_a_BW << " " << g_link_b_BW << " " << g_link_c_BW << " " << link_b_BER << " "
             << g_tcp_buffer_size << " " << g_router_b_buffer_size << " " << g_router_c_buffer_size << std::endl;
 
   string linkRate = "0.1Mbps"; // not used
@@ -115,18 +118,19 @@ int main(int argc, char* argv[])
   uint32_t headersSize = 20 + 20 + 2 + tcpOptionSize; //ipheader + tcpheader + pppheader + tcp options
   uint32_t segmentSize = 1500;
   uint32_t segmentSizeWithoutHeaders = segmentSize - headersSize;
-  double cRate=g_link_b_BER;
+//  double cRate=g_link_b_BER;
   DataRate rate(linkRate);
   Time delay(linkDelay);
 
   uint32_t bdp = rate.GetBitRate() * delay.GetSeconds() * 8; // bandwidth-delay product (Long Fat Network if bdp is significantly larger than 10^5 bits)
   uint32_t bdpBytes = bdp/8;
-  uint32_t queueSize = 1.5 * max<uint32_t>(bdpBytes, 10 * segmentSize);
+  uint32_t queueSize = segmentSize;//1.5 * max<uint32_t>(bdpBytes, 10 * segmentSize);
 
   //Enable logging
 //  EnableLogging ();
 
-  SetConfigDefaults(linkRate, linkDelay, segmentSize, segmentSizeWithoutHeaders, queueSize);
+  SetConfigDefaults(linkRate, linkDelay, segmentSize, segmentSizeWithoutHeaders, queueSize,mpcc_algo);
+//  Simulator::Schedule(Seconds(20.0),&link_change);
 
   NodeContainer server;
   NodeContainer client;
@@ -256,10 +260,10 @@ NS_LOG_UNCOND("success3");
       std::cout << "interface " << j << " " << ipv4->GetNetDevice(j) << " : " << addr << '\t';
     }
   }
-  std::cout << "\n\n";
+//  std::cout << "\n\n";
 
   Simulator::Run ();
   Simulator::Destroy ();
-  std::cout << "func5"<<std::endl;
+//  std::cout << "func5"<<std::endl;
   return 0;
 }
