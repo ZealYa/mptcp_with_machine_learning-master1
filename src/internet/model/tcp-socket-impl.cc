@@ -268,6 +268,11 @@ void TcpSocketImpl::SetCongestionControlAlgorithm (Ptr<TcpCongestionOps> algo)
 }
 
 
+Ptr<TcpCongestionOps> TcpSocketImpl::GetCongestionControlAlgorithm () const
+{
+  return m_congestionControl;
+}
+
 void TcpSocketImpl::SetMaxSegLifetime (double msl)
 {
   m_tcpParams->m_msl = msl;

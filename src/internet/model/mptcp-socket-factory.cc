@@ -25,6 +25,7 @@
 #include "mptcp-lia.h"
 #include "mptcp-olia.h"
 #include "mptcp-balia.h"
+#include "mptcp-wvegas.h"
 #include "mptcp-meta-socket.h"
 
 namespace ns3 {
@@ -77,9 +78,16 @@ MpTcpSocketFactory::CreateSocket (void)
   if(getMpCcAlgo()==0){
 	  std::cout<<"LIA!"<<endl;
 	  return m_tcp->CreateSocket (MpTcpLia::GetTypeId (), MpTcpMetaSocket::GetTypeId());
-  }else{
+  }else if(getMpCcAlgo()==1){
 	  std::cout<<"OLIA!"<<endl;
 	  return m_tcp->CreateSocket (MpTcpOLia::GetTypeId (), MpTcpMetaSocket::GetTypeId());
+  }else if(getMpCcAlgo()==2){
+	  std::cout<<"BALIA!"<<endl;
+	  return m_tcp->CreateSocket (MpTcpBalia::GetTypeId (), MpTcpMetaSocket::GetTypeId());
+  }else {
+	  std::cout<<"WVEGAS!"<<endl;
+	  return m_tcp->CreateSocket (MpTcpWVegas::GetTypeId (), MpTcpMetaSocket::GetTypeId());
+
   }
 
 }
