@@ -8,7 +8,7 @@ from optparse import OptionParser
 import random
 from rl_socket import Interacter_socket
 from RL_core import DDPG
-from RL_core import extract_observation
+# from RL_core import extract_observation
 from RL_core import extract_ssThresh
 from RL_core import calculate_reward
 from RL_core import apply_action
@@ -165,8 +165,10 @@ class DataRecorder():
         # global g_TcWnd0
         # global g_TcWnd1
         # name#value$name$value...
+        # str_data = str_data.encode('utf-8')
+        print(str_data)
         str_data=str_data.decode()
-        # print(str_data)
+
         pair_list = str_data.split("$")
         # print(pair_list)
         one_row = {}
@@ -244,12 +246,12 @@ if __name__ == "__main__":
     # parser.add_option("-t", "--testMode", dest="testMode", default=0,help="Test/Train")
     (options, args) = parser.parse_args()
 
-    episode_count = 0
+    episode_count = 1
     # RL = DeepQNetwork(n_actions=4, n_features=4, learning_rate=0.01, reward_decay=0.9,
     #                   e_greedy=0.9, replace_target_iter=200, memory_size=2000, output_graph=True)
     TestMode=False;
 
-    ddpg = DDPG(2, 10)
+    ddpg = DDPG(1, 5)
 
     print("Total epsodes:")
     print(int(options.MaxEpisode))
@@ -257,7 +259,7 @@ if __name__ == "__main__":
     # var = 1  # control exploration
     f2 = open("/home/hong/workspace/mptcp/ns3/mptcp_output/calculate_reward_history2", 'w')
     f2.write("epsode,reward\n")
-    while episode_count < int(options.MaxEpisode):
+    while episode_count <= int(options.MaxEpisode):
         rttRecorder = RecordRTT('/home/hong/workspace/mptcp/ns3/rl_training_data/' + str(episode_count) + '_client_rtt')
         cWndRecorder = RecordCwnd('/home/hong/workspace/mptcp/ns3/rl_training_data/' + str(episode_count) + '_client_cWnd')
         rWndRecorder = RecordRwnd('/home/hong/workspace/mptcp/ns3/rl_training_data/' + str(episode_count) + '_client_rWnd')
@@ -276,7 +278,7 @@ if __name__ == "__main__":
 
         # f3=open('/home/hong/workspace/mptcp/ns3/rl_training_data/' + str(episode_count) + '_throughput','w')
         # f3.write("timestamp,throughput0,throughput1\n")
-        socket = Interacter_socket(host = '127.0.0.2', port = 12345)
+        socket = Interacter_socket(host = '127.0.0.3', port = 12345)
         socket.listen()
         recv_str, this_episode_done = socket.recv()
         last_rcvstr = recv_str
@@ -291,10 +293,12 @@ if __name__ == "__main__":
         OldAckTime2 = [0,0]
         I=[0,0]
         dataRecorder.add_one_record(recv_str)  #
-        observation_before_action ,segmentSize,OldAckTime,OldAckTime2,I= extract_observation(dataRecorder,OldSeqNum,OldAckTime,OldAckTime2,I)
-        cwnd,ssThresh = extract_ssThresh(dataRecorder)
+
+        observation_before_action ,reward= ddpg.extract_observation(dataRecorder,1)
+        cwnd,ssThresh= extract_ssThresh(dataRecorder)
         # print("observation_before_action0:" + str(observation_before_action))
-        print("seg:"+str(segmentSize))
+        # print("seg:"+str(segmentSize))
+        segmentSize=1500
 
 
 
@@ -306,7 +310,7 @@ if __name__ == "__main__":
 
 
         step, lastSchedulerTiming, accumulativeReward = 0, float("-inf"), 0 # float("-inf") ensures that a scheduler is choosen at first time
-        count=1;
+        count=1
         totalThpt1=0
         totalThpt2=0
         count_done=0
@@ -383,15 +387,12 @@ if __name__ == "__main__":
                 dataRecorder.add_one_record(recv_str)
 
 
-                observation_after_action, segmentSize, OldAckTime, OldAckTime2, I = extract_observation(dataRecorder,
-                                                                                                         OldSeqNum,
-                                                                                                         OldAckTime,
-                                                                                                         OldAckTime2, I)
+                observation_after_action, reward= ddpg.extract_observation(dataRecorder,1)
                 # print("observation_after_action:"+str(observation_after_action))
                 cwnd2, ssThresh2 = extract_ssThresh(dataRecorder)
                 # observation_after_action = nomorlize_obs(observation_after_action, 2147483647, 0)
-                print("cwnd: "+str(cwnd2[0])+" "+str(cwnd2[1]))
-                reward,throughput,totalThpt1,totalThpt2 = calculate_reward(dataRecorder)
+                # print("cwnd: "+str(cwnd2[0])+" "+str(cwnd2[1]))
+                # reward,throughput,totalThpt1,totalThpt2 = calculate_reward(dataRecorder)
                 accumulativeReward += reward
                 # print("accumulativeReward:"+str(accumulativeReward))
 
@@ -400,16 +401,16 @@ if __name__ == "__main__":
                     ddpg.store_transition(observation_before_action, action, reward, observation_after_action,this_episode_done,episode_count)
                 print(str(observation_before_action)+",a= "+str(action)+", r="+str(reward)+",o:"+str(observation_after_action))
 
-                # if (step > 200) and (step % 5 == 0):
-                #     # if var > 0.1:
-                #     #     var *= .9995
-                #     # print("Update var: "+str(var))
-                #     ddpg.learn()
-                #     print("learning!")
+                if (step > 200) and (step % 5 == 0) and TestMode==False:
+                    # if var > 0.1:
+                    #     var *= .9995
+                    # print("Update var: "+str(var))
+                    ddpg.learn()
+                    print("learning!")
 
                 observation_before_action = observation_after_action
-                ssThresh = ssThresh2
-                cwnd = cwnd2
+                # ssThresh = ssThresh2
+                # cwnd = cwnd2
 
                 f.write(str(dataRecorder.get_latest_data()["time"]) + ',' + str(reward) + '\n')
                 # f3.write(str(dataRecorder.get_latest_data()["time"]) + ',' + str(throughput[0]) +',' + str(throughput[1])+ '\n')

@@ -10,6 +10,7 @@ class ReplayBuffer(object):
 
     def get_batch(self, batch_size):
         # Randomly sample batch_size examples
+        # print("buffer size:"+str(self.buffer)+" batch_size"+str(batch_size))
         return random.sample(self.buffer, batch_size)
 
     def size(self):

@@ -90,7 +90,8 @@ void EnableLogging ()
   // // //
   // LogComponentEnable ("Ipv4L3Protocol", LOG_LEVEL_ALL);
   // LogComponentEnable("PointToPointNetDevice", LOG_LEVEL_ALL);
-  // LogComponentEnable ("Ipv4EndPoint", LOG_LEVEL_ALL);
+  // LogComponentEnable ("Ipv4EndPoint", LOG_LEVEL_ALL);MpTcpWVegas
+	LogComponentEnable("MpTcpWVegas",LOG_LEVEL_ALL);
 }
 
 };

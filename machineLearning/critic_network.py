@@ -33,7 +33,8 @@ class CriticNetwork:
 		self.sess.run(tf.initialize_all_variables())
 			
 		self.update_target()
-		self.load_network()
+		# self.load_network()
+
 
 	def create_training_method(self):
 		# Define training optimizer

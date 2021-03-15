@@ -70,6 +70,7 @@ def proprocess_throughput_data(file_path):
     record0 = []
     record1 = []
     valid = [False, False]
+    max_thr=0.0
     with open(file_path, 'rt') as txtfile:
         spamreader = csv.reader(txtfile, delimiter=',')
         # print(spamreader)
@@ -82,20 +83,24 @@ def proprocess_throughput_data(file_path):
             subflow=row_list[0]
             timestamp=row_list[1]
             throughput=row_list[2]
+            f_thr= float(throughput)
+            if(f_thr>max_thr):
+                max_thr=f_thr
+
             if subflow=='0':
-                record0.append([float(timestamp), float(throughput)])
+                record0.append([float(timestamp),f_thr])
             if subflow=='1':
-                record1.append([float(timestamp), float(throughput)])
+                record1.append([float(timestamp), f_thr])
 
     columns0 = ['timestamp','throughput']
 
     throughput_records0 = pd.DataFrame(record0, columns=columns0)
     throughput_records1 = pd.DataFrame(record1, columns=columns0)
 
-    return throughput_records0,throughput_records1
+    return throughput_records0,throughput_records1,max_thr
 
 
-def AnalyzeClientthroughput(throughput_records0,throughput_records1,duration,str_mpcc_algo):
+def AnalyzeClientthroughput(throughput_records0,throughput_records1,duration,str_mpcc_algo,max_thr):
     client_throughput0 = throughput_records0[["timestamp", "throughput"]].values
     client_throughput1 = throughput_records1[["timestamp", "throughput"]].values
 
@@ -106,15 +111,17 @@ def AnalyzeClientthroughput(throughput_records0,throughput_records1,duration,str
 
     # print(list(client_throughput0[0:100,0]))
     # print(list(client_throughput0[0:100,1]))
+    print("The type of the client_throughput0"+str(type(client_throughput0))+" average:"+str(np.mean(client_throughput0)))
+    print("The type of the client_throughput1" + str(type(client_throughput1))+" average:"+str(np.mean(client_throughput1)))
 
     plt.legend([c_s_subflow_1_throughput, c_s_subflow_2_throughput], ['subflow 1 cWnd', 'subflow 2 cWnd'], loc='best')
     plt.title('Time-throughput')
     plt.xlabel('Time / s', fontsize = 14, color = 'black')
     plt.ylabel('Kbps', fontsize = 14, color = 'black')
     plt.xlim(0,duration)
-    plt.ylim(0,1500)
+    plt.ylim(0,max_thr*1.1)
     x_major_locator=MultipleLocator(10)
-    y_major_locator=MultipleLocator(100)
+    y_major_locator=MultipleLocator(max_thr*1.1/10)
     ax=plt.gca()
     ax.xaxis.set_major_locator(x_major_locator)
     ax.yaxis.set_major_locator(y_major_locator)
@@ -128,6 +135,7 @@ def proprocess_cWnd_data(file_path):
     record0 = []
     record1 = []
     valid = [False, False]
+    max_cwnd=0.0
     with open(file_path, 'rt') as txtfile:
         spamreader = csv.reader(txtfile, delimiter=',')
         # print(spamreader)
@@ -140,23 +148,26 @@ def proprocess_cWnd_data(file_path):
             subflow=row_list[0]
             timestamp=row_list[1]
             cWnds=row_list[2]
+            f_cWnds=float(cWnds) 
+            if(f_cWnds>max_cwnd):
+                max_cwnd=f_cWnds
             if subflow=='0':
-                record0.append([float(timestamp), float(cWnds)])
+                record0.append([float(timestamp), f_cWnds])
             if subflow=='1':
-                record1.append([float(timestamp), float(cWnds)])
+                record1.append([float(timestamp), f_cWnds])
 
     columns0 = ['timestamp','cWnds']
 
     cWnd_records0 = pd.DataFrame(record0, columns=columns0)
     cWnd_records1 = pd.DataFrame(record1, columns=columns0)
 
-    return cWnd_records0,cWnd_records1
+    return cWnd_records0,cWnd_records1,max_cwnd
 
 
-def AnalyzeClientCwnd(cWnd_records0,cWnd_records1,duration,str_mpcc_algo):
+def AnalyzeClientCwnd(cWnd_records0,cWnd_records1,duration,str_mpcc_algo,max_cwnd):
     client_cWnd0 = cWnd_records0[["timestamp", "cWnds"]].values
     client_cWnd1 = cWnd_records1[["timestamp", "cWnds"]].values
-    print("cwnd_record"+str(cWnd_records1));
+    # print("cwnd_record"+str(cWnd_records1));
 
 
 
@@ -171,9 +182,9 @@ def AnalyzeClientCwnd(cWnd_records0,cWnd_records1,duration,str_mpcc_algo):
     plt.xlabel('Time / s', fontsize = 14, color = 'black')
     plt.ylabel('cWnd / byte', fontsize = 14, color = 'black')
     plt.xlim(0,duration)
-    plt.ylim(0,10000)
-    x_major_locator=MultipleLocator(10)
-    y_major_locator=MultipleLocator(500)
+    plt.ylim(0,max_cwnd*1.1)
+    x_major_locator=MultipleLocator(duration/10)
+    y_major_locator=MultipleLocator(max_cwnd*1.1/10)
     ax=plt.gca()
     ax.xaxis.set_major_locator(x_major_locator)
     ax.yaxis.set_major_locator(y_major_locator)
@@ -196,18 +207,20 @@ if __name__ == '__main__':
     str_mpcc_algo="LIA"
     if mpcc_algo==1:
         str_mpcc_algo="OLIA"
+    elif mpcc_algo==2:
+        str_mpcc_algo = "WVEGAS"
 
 
     plt.figure(figsize=(15, 24))
     plt.subplot(3, 1, 1)
-    cWnd_records0,cWnd_records1 = proprocess_cWnd_data('cwnd_data.txt')
-    AnalyzeClientCwnd(cWnd_records0,cWnd_records1,duration,str_mpcc_algo)
+    cWnd_records0,cWnd_records1 ,max_cwnd= proprocess_cWnd_data('cwnd_data.txt')
+    AnalyzeClientCwnd(cWnd_records0,cWnd_records1,duration,str_mpcc_algo,max_cwnd)
 
 
     plt.subplot(3, 1, 2)
 
-    throughput_records0, throughput_records1 = proprocess_throughput_data('throughput_data.txt')
-    AnalyzeClientthroughput(throughput_records0, throughput_records1,duration,str_mpcc_algo)
+    throughput_records0, throughput_records1 ,max_thr= proprocess_throughput_data('throughput_data.txt')
+    AnalyzeClientthroughput(throughput_records0, throughput_records1,duration,str_mpcc_algo,max_thr)
 
     # plt.figure(figsize=(20, 8))
     plt.subplot(3, 1, 3)

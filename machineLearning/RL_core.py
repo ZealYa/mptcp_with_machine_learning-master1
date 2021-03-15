@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import os
+import math
 import tensorflow as tf
 import random
 from time import sleep
@@ -37,6 +38,7 @@ GAMMA = 0.99
 class DDPG:
     """docstring for DDPG"""
 
+
     def __init__(self, a_dim, s_dim):
         self.name = 'DDPG'  # name for uploading results
         # self.environment = env
@@ -45,6 +47,9 @@ class DDPG:
         self.state_dim = s_dim
         self.action_dim = a_dim
         self.time_step=0
+        self.max_bw = 0.0
+        self.max_cwnd = 0.0
+        self.min_rtt = 9999999.0
 
         self.sess = tf.InteractiveSession()
 
@@ -111,6 +116,7 @@ class DDPG:
     def store_transition(self, s, a, r, s_,done,episode_count):
 
         # Store transition (s_t,a_t,r_t,s_{t+1}) in replay buffer
+        # print("*********************************ADD****************************")
         self.replay_buffer.add(s, a, r, s_, done)
 
         # Store transitions to replay start size then start training
@@ -126,112 +132,146 @@ class DDPG:
         # Re-iniitialize the random process when an episode ends
         if done:
             self.exploration_noise.reset()
-# class DDPG(object):
-#     def __init__(self, a_dim, s_dim, a_bound,model_dir):
-#         self.memory = np.zeros((MEMORY_CAPACITY, s_dim * 2 + a_dim + 1), dtype=np.float32)
-#         self.pointer = 0
-#         self.sess = tf.Session()
-#         self.model_dir = model_dir
-#         self.learn_step_counter= 0
-#
-#         self.a_dim, self.s_dim, self.a_bound = a_dim, s_dim, a_bound,
-#         self.S = tf.placeholder(tf.float32, [None, s_dim], 's')
-#         self.S_ = tf.placeholder(tf.float32, [None, s_dim], 's_')
-#         self.R = tf.placeholder(tf.float32, [None, 1], 'r')
-#
-#         with tf.variable_scope('Actor'):
-#             self.a = self._build_a(self.S, scope='eval', trainable=True)
-#             a_ = self._build_a(self.S_, scope='target', trainable=False)
-#         with tf.variable_scope('Critic'):
-#             # assign self.a = a in memory when calculating q for td_error,
-#             # otherwise the self.a is from Actor when updating Actor
-#             q = self._build_c(self.S, self.a, scope='eval', trainable=True)
-#             q_ = self._build_c(self.S_, a_, scope='target', trainable=False)
-#
-#         # networks parameters
-#         self.ae_params = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='Actor/eval')
-#         self.at_params = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='Actor/target')
-#         self.ce_params = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='Critic/eval')
-#         self.ct_params = tf.get_collection(tf.GraphKeys.GLOBAL_VARIABLES, scope='Critic/target')
-#
-#         # target net replacement
-#         self.soft_replace = [tf.assign(t, (1 - TAU) * t + TAU * e)
-#                              for t, e in zip(self.at_params + self.ct_params, self.ae_params + self.ce_params)]
-#
-#         q_target = self.R + GAMMA * q_
-#         # in the feed_dic for the td_error, the self.a should change to actions in memory
-#         td_error = tf.losses.mean_squared_error(labels=q_target, predictions=q)
-#         self.ctrain = tf.train.AdamOptimizer(LR_C).minimize(td_error, var_list=self.ce_params)
-#
-#         a_loss = - tf.reduce_mean(q)    # maximize the q
-#         self.atrain = tf.train.AdamOptimizer(LR_A).minimize(a_loss, var_list=self.ae_params)
-#
-#         self.sess.run(tf.global_variables_initializer())
-#         self.saver = tf.train.Saver()
-#
-#         if not os.path.exists(self.model_dir):
-#             os.mkdir(self.model_dir)
-#
-#         checkpoint = tf.train.get_checkpoint_state(self.model_dir)
-#         if checkpoint and checkpoint.model_checkpoint_path:
-#             self.saver.restore(self.sess,checkpoint.model_checkpoint_path)
-#             print("Loading successfully")
-#             sleep(3)
-#             self.learn_step_counter = int(checkpoint.model_checkpoint_path.split('-')[-1])+1
-#
-#     def choose_action(self, s):
-#         return self.sess.run(self.a, {self.S: s[np.newaxis, :]})[0]
-#
-#     def learn(self):
-#         # soft target replacement
-#         self.sess.run(self.soft_replace)
-#
-#         indices = np.random.choice(MEMORY_CAPACITY, size=BATCH_SIZE)
-#         bt = self.memory[indices, :]
-#         bs = bt[:, :self.s_dim]
-#         ba = bt[:, self.s_dim: self.s_dim + self.a_dim]
-#         br = bt[:, -self.s_dim - 1: -self.s_dim]
-#         bs_ = bt[:, -self.s_dim:]
-#
-#         self.sess.run(self.atrain, {self.S: bs})
-#         self.sess.run(self.ctrain, {self.S: bs, self.a: ba, self.R: br, self.S_: bs_})
-#         self.learn_step_counter += 1
-#         if self.learn_step_counter%400:
-#             self.saver.save(self.sess,"/home/hong/model/",global_step=self.learn_step_counter)
-#
-#
-#
-#
-#     def store_transition(self, s, a, r, s_):
-#         transition = np.hstack((s, a, [r], s_))
-#         index = self.pointer % MEMORY_CAPACITY  # replace the old memory with new memory
-#         self.memory[index, :] = transition
-#         self.pointer += 1
-#
-#     def _build_a(self, s, scope, trainable):
-#         with tf.variable_scope(scope):
-#             net = tf.layers.dense(s, 30, activation=tf.nn.relu, name='l1', trainable=trainable)
-#             a = tf.layers.dense(net, self.a_dim, activation=tf.nn.tanh, name='a', trainable=trainable)
-#             return tf.multiply(a, self.a_bound, name='scaled_a')
-#
-#     def _build_c(self, s, a, scope, trainable):
-#         with tf.variable_scope(scope):
-#             n_l1 = 30
-#             w1_s = tf.get_variable('w1_s', [self.s_dim, n_l1], trainable=trainable)
-#             w1_a = tf.get_variable('w1_a', [self.a_dim, n_l1], trainable=trainable)
-#             b1 = tf.get_variable('b1', [1, n_l1], trainable=trainable)
-#             net = tf.nn.relu(tf.matmul(s, w1_s) + tf.matmul(a, w1_a) + b1)
-#             return tf.layers.dense(net, 1, trainable=trainable)  # Q(s,a)
-#
-#
+
+    def extract_observation(self,dataRecorder,subflow_index):
+        print("extracting...")
+        value_dic = dataRecorder.get_latest_data()
+        # observation = np.zeros((4))
+        observation = np.zeros((5))
+        t_cWnd=[0,0]
+        t_thr=[0,0]
+        t_rtt=[0,0]
+        t_loss_rate=[0,0]
+        t_unAck=[0,0]
+        s0=[0,0,0,0,0]
+        state=np.zeros(1)
+        for i in range(value_dic["nbOfSubflows"]):
+            name = "cWnd" + str(i)
+            t_cWnd[i] = value_dic[name]
+            name = "rtt"+str(i)
+            t_rtt[i] = value_dic[name]
+            name = "unAck" + str(i)
+            t_unAck[i]=value_dic[name]
+            name = "loss_rate" + str(i)
+            t_loss_rate[i]=value_dic[name]
+            name = "throughput" + str(i)
+            t_thr[i]=value_dic[name]
+
+        thr=t_thr[subflow_index]
+        s0[0]=t_thr[subflow_index]
+
+        rtt=t_rtt[subflow_index]
+        s0[1]=t_rtt[subflow_index]
+
+        cwnd=t_cWnd[subflow_index]
+        s0[2]=t_cWnd[subflow_index]
+
+        loss_rate=t_loss_rate[subflow_index]
+        s0[3]=t_loss_rate[subflow_index]
+
+        unAck=t_unAck[subflow_index]
+        s0[4]=t_unAck[subflow_index]
+
+
+        s0=np.array(s0)
+        min_=s0-s0
+
+        thr_n=s0[0]
+        thr_n_min=s0[0]-min_[0]
+        rtt_min=s0[1]-min_[1]
+        cwnd_n_min=s0[2]-min_[2]
+        loss_rate_n_min=s0[3]-min_[3]
+        unAck_n_min=s0[4]-min_[4]
+
+        # loss_rate_n_min=s0[7]-min_[7]
+
+        if self.max_bw<thr_n_min:
+            self.max_bw=thr_n_min
+        if self.max_cwnd<cwnd_n_min:
+            self.max_cwnd=cwnd_n_min
+        if self.max_cwnd<cwnd_n_min:
+            self.max_cwnd=cwnd_n_min
+        if self.min_rtt>rtt_min:
+            self.min_rtt=rtt_min
+
+       
+        reward  = thr_n_min-0.5*rtt_min-1000*loss_rate_n_min
+        print("reward:"+str(reward)+" thr_n_min:"+str(thr_n_min)+ " rtt_min:"+str(rtt_min)+" loss_rate_n_min :"+str(loss_rate_n_min))
+        if self.max_bw!=0:
+            state[0]=thr_n_min/self.max_bw
+            # tmp=pacing_rate_n_min/self.max_bw
+            state=np.append(state,[5*loss_rate_n_min/self.max_bw])
+            state=np.append(state,[unAck_n_min/self.max_bw])
+        else:
+            state[0]=0
+            state=np.append(state,[0])
+            state=np.append(state,[0])
+        state=np.append(state,[1400/cwnd])
+        state=np.append(state,[self.min_rtt/rtt_min])
+        
+
+        return state,reward
+
+
+
+class Normalizer():
+    def __init__(self):
+        self.n = 1e-5
+        num_inputs = 5
+        self.mean = np.zeros(num_inputs)
+        self.mean_diff = np.zeros(num_inputs)
+        self.var = np.zeros(num_inputs)
+        self.dim = num_inputs
+        self.min = np.zeros(num_inputs)
+
+
+    def observe(self, x):
+        self.n += 1
+        last_mean = np.copy(self.mean)
+        self.mean += (x-self.mean)/self.n
+        self.mean_diff += (x-last_mean)*(x-self.mean)
+        self.var = self.mean_diff/self.n
+
+    def normalize(self, inputs):
+        obs_std = np.sqrt(self.var)
+        a=np.zeros(self.dim)
+        if self.n > 2:
+            a=(inputs - self.mean)/obs_std
+            for i in range(0,self.dim):
+                if a[i] < self.min[i]:
+                    self.min[i] = a[i]
+            return a
+        else:
+            return np.zeros(self.dim)
+
+    def normalize_delay(self,delay):
+        obs_std = math.sqrt(self.var[0])
+        if self.n > 2:
+            return (delay - self.mean[0])/obs_std
+        else:
+            return 0
+
+    def stats(self):
+        return self.min
 
 
 omega=0.5
 
-def extract_observation(dataRecorder,OldSeqNum,OldAckTime,OldAckTime2,I):
+
+
+
+
+
+
+    
+
+
+# #这个函数是我毕业设计的直接获取两条流的state进行训练的状态提取函数
+def extract_observation_mptcp_version(dataRecorder,OldSeqNum,OldAckTime,OldAckTime2,I):
     # let's set return value "observation" to be a np array with fixed length
     print("extracting...")
     value_dic = dataRecorder.get_latest_data()
+    print(value_dic)
     observation = np.zeros((10))
     cWnd=[0,0]
     rtt=[0,0]
@@ -256,8 +296,8 @@ def extract_observation(dataRecorder,OldSeqNum,OldAckTime,OldAckTime2,I):
         I[i] = (I[i] * omega+ (1 - omega) * rtt[i]/ 10000000)
 
         name = "state"+str(i)
-        state[i]=value_dic[name]
-        name = "inFlight" + str(i)
+        state[i]=1
+        name = "unAck" + str(i)
         inFlight[i]=value_dic[name]
 
     observation[0] = I[0]
@@ -286,24 +326,25 @@ def extract_observation(dataRecorder,OldSeqNum,OldAckTime,OldAckTime2,I):
         # print("cWnd:" + str(i) + ": " + str(value_dic[name]))
         # name = "rtt" + str(i)
         # observation[i * 2 + 2] = value_dic[name]
-    return observation,value_dic["segmentSize"],OldAckTime,OldAckTime2,I
+    return observation,1500,OldAckTime,OldAckTime2,I
 
 def extract_ssThresh(dataRecorder):
     # let's set return value "observation" to be a np array with fixed length
     value_dic = dataRecorder.get_latest_data()
     ssThresh = np.zeros((2))
-    for i in range(value_dic["nbOfSubflows"]):
-        name = "ssThresh" + str(i)
-        ssThresh[i] = value_dic[name]
-        # name = "rtt" + str(i)
-        # observation[i * 2 + 2] = value_dic[name]
+    # for i in range(value_dic["nbOfSubflows"]):
+    #     name = "ssThresh" + str(i)
+    #     ssThresh[i] = value_dic[name]
+    #     # name = "rtt" + str(i)
+    #     # observation[i * 2 + 2] = value_dic[name]
     cwnd = np.zeros((2))
     for i in range(value_dic["nbOfSubflows"]):
         name = "cWnd" + str(i)
         cwnd[i] = value_dic[name]
         # name = "rtt" + str(i)
         # observation[i * 2 + 2] = value_dic[name]
-    return cwnd,ssThresh
+        # segmentSize=value_dic["seg"]
+    return cwnd,2000
 
 def action_translator(dataRecorder, action):
     # action is a numpy array, so we need translator
@@ -312,7 +353,7 @@ def action_translator(dataRecorder, action):
     # 1 choose subflow 1
     # 2 choose subflow 2
     # print type(action), action
-    return "["+str(int(action[0]))+","+str(int(action[1]))+"]"
+    return "["+str(int(action[0]))+"]"
 
 def apply_action(interacter_socket, dataRecorder, action,segmentSize,cwnd1,cwnd2,ssThresh):
     # print("apply_action:cwnd:"+str(cwnd1)+","+str(cwnd2)+" ssThresh:"+str(ssThresh))
@@ -327,7 +368,7 @@ def apply_action(interacter_socket, dataRecorder, action,segmentSize,cwnd1,cwnd2
         #     action[0]=-action[0]
         # if action[1]<0 :
         #     action[1]=-action[1]
-        action_apply=action/2+0.5
+        action_apply=action*2
         print("is goint to use"+str(action_apply))
         # if(cwnd1>3000):
         #     # new_cWnd1 = cwnd1 + np.int((cwnd1 * 1.0 / segmentSize) * action[0]) * segmentSize
@@ -348,12 +389,12 @@ def apply_action(interacter_socket, dataRecorder, action,segmentSize,cwnd1,cwnd2
         #     # action2[1]=1
         #     action2[1] =2*(new_cWnd2 / BOUND-0.5)
 
-        new_cWnd1 = int(BOUND * action_apply[0])
-        new_cWnd2 = int(BOUND * action_apply[1])
+        new_cWnd1 = cwnd1*math.pow(4,action)
+        # new_cWnd2 = int(BOUND * action_apply[1])
 
 
 
-        action = [int(new_cWnd1), int(new_cWnd2)]
+        action = [int(new_cWnd1)]
         action = np.clip(action,segmentSize,BOUND)
 
 
