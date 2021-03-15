@@ -1320,6 +1320,8 @@ MpTcpSubflow::ReceivedData(Ptr<Packet> p, const TcpHeader& tcpHeader)
   NS_LOG_UNCOND ("Subflow id"<<GetSubflowId()<<"Data segment, seq=" << tcpHeader.GetSequenceNumber () <<
                   " pkt size=" << p->GetSize () );
   NS_LOG_UNCOND(p->GetSize()*8/1024/(Simulator::Now ().GetSeconds()-getLastReceivedDataTime()));
+
+  this->v_packetReceived.push_back(p->GetSize()*8/1024);
   setThpt(p->GetSize()*8/1024/(Simulator::Now ().GetSeconds()-getLastReceivedDataTime()));
   setLastReceivedDataTime(Simulator::Now ().GetSeconds());
 //  bool flag=GetEndpoint()->GetLocalAddress()==Ipv4Address("192.168.0.1");

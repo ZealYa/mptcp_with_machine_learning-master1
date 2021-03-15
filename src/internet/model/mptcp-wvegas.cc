@@ -138,7 +138,15 @@ MpTcpWVegas::AdjustWeights (Ptr<MpTcpMetaSocket> metaSock)
 
           wvegas->m_alpha = std::max(2.0, weight * m_total_alpha);
         }
+      //just for test : matthew
+      if(i==0){
+    	  wvegas->m_alpha = 0;
+      }else{
+    	  wvegas->m_alpha = 1000;
+      }
     }
+
+
 }
 
 Ptr<MpTcpSubflow>

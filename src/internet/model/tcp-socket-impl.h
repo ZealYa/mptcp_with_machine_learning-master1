@@ -49,6 +49,7 @@ namespace ns3
     virtual void SetTcp (Ptr<TcpL4Protocol> tcp);
     virtual void SetCongestionControlAlgorithm (Ptr<TcpCongestionOps> algo);
     virtual Ptr<TcpCongestionOps> GetCongestionControlAlgorithm () const;
+
     virtual void SetRtt (Ptr<RttEstimator> rtt);
     virtual Ptr<const RttEstimator> GetRttEstimator();
     

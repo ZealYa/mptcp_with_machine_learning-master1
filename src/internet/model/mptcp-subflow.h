@@ -248,6 +248,8 @@ public:
 	double getThpt();
 
 	void setThpt(double thpt);
+	int64_t rtt_ms;
+	std::vector<double> v_packetReceived;
 
 protected:
   friend class MpTcpMetaSocket;
@@ -386,6 +388,7 @@ protected:
   MpTcpMappingContainer m_RxMappings;  //!< List of mappings to receive
   double m_lastReceivedDataTime;//add by matthew
   double m_thpt;//add by matthew
+
 //  ofstream throughput_data;
 
 
