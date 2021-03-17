@@ -653,7 +653,7 @@ void MpTcpMetaSocket::LogThpt(Ptr<MpTcpSubflow> sf){//add by matthew
 	  				throughput_data<<subflow->m_id<<" "<<Simulator::Now ().GetSeconds ()<<" "<<subflow->getThpt()<<endl;
 	  		}
 
-	    //      std::cout<<"last ack timestamp:"<<subflow->m_lastAckEvent.GetTs()<<endl;
+	    //      std::"last ack timestamp:"<<subflow->m_lastAckEvent.GetTs()<<endl;
 	    //      socket.add("window"+std::to_string(index), subflowWindow);
 	    //      socket.add("cWnd"+std::to_string(index), tcb->m_cWnd);
 	    //      socket.add("rWnd"+std::to_string(index), m_rWnd.Get());
@@ -1121,7 +1121,7 @@ SequenceNumber64 MpTcpMetaSocket::GetNextTxSequence() const
 
 void MpTcpMetaSocket::RlInteractModule(int subflowid)
 {
-	std::cout<<"RlInteractModule!"<<"  this->GetNode()->GetId():"<<this->GetNode()->GetId()<<" subflow:"<<subflowid<<endl;
+//	std::cout<<"RlInteractModule!"<<"  this->GetNode()->GetId():"<<this->GetNode()->GetId()<<" subflow:"<<subflowid<<endl;
 	if(this->GetNode()->GetId() == 0){
 
 //		std::cout<<"******************interact!*********************"<<endl;
@@ -2512,10 +2512,10 @@ MpTcpMetaSocket::SendStates(rl::InterfaceToRL& socket,int subflowid){
   // Assert that 1. client node must has node id 0 2. only client node call this function
   NS_ASSERT(this->GetNode()->GetId() == 0);
   static uint32_t seq_num = 0;
-  std::cout<<"start send!"<<endl;
+//  std::cout<<"start send!"<<endl;
   uint32_t nbOfSubflows = this->GetNSubflows();
   NS_ASSERT (nbOfSubflows == m_subflows.size()); // Hong Jiaming: Just for debug
-  std::cout << "Hong Jiaming 21: number of active subflows:" << nbOfSubflows << std::endl;
+//  std::cout << "Hong Jiaming 21: number of active subflows:" << nbOfSubflows << std::endl;
   // RttHistory_t
   // socket.add("time", Simulator::Now().GetNanoSeconds());
   socket.add("ssn", seq_num);
@@ -2546,6 +2546,8 @@ MpTcpMetaSocket::SendStates(rl::InterfaceToRL& socket,int subflowid){
     double lossTimesSum = std::accumulate(tcb->m_segmentsLoss.begin(), tcb->m_segmentsLoss.end(), 0);
 
     float loss_rate;
+
+//    std::cout<<"send! index:"<<index<< "tcb->m_segmentsAcked size: "<<tcb->m_segmentsAcked.size()<<" lossTimesSum"<<lossTimesSum<<" rtt_ms:"<<subflow->rtt_ms<<endl;
     if(throughput>0){
     	 loss_rate = (lossTimesSum * tcb->m_segmentSize)*8 / subflow->rtt_ms /throughput;
     }else{
@@ -2558,7 +2560,7 @@ MpTcpMetaSocket::SendStates(rl::InterfaceToRL& socket,int subflowid){
         	tcb->m_segmentsLoss.clear();
     }
 
-    std::cout<<"send! index:"<<index<< "segmentsAckedSum:"<<segmentsAckedSum<<" lossTimesSum"<<lossTimesSum<<" rtt_ms:"<<subflow->rtt_ms<<endl;
+//    std::cout<<"send! index:"<<index<< "tcb->m_segmentsAcked size: "<<tcb->m_segmentsAcked.size()<<" lossTimesSum"<<lossTimesSum<<" rtt_ms:"<<subflow->rtt_ms<<endl;
 
 
     subflow->rtt_ms=subflow->GetRttEstimator()->GetEstimate().GetMicroSeconds()/1000;
@@ -2577,7 +2579,7 @@ MpTcpMetaSocket::SendStates(rl::InterfaceToRL& socket,int subflowid){
     socket.add("loss_rate"+std::to_string(index), loss_rate);
     // std::cout << "Hong Jiaming 15: send rtt=" << subflow->GetRttEstimator()->GetEstimate().GetMicroSeconds() << std::endl;
   }
-  std::cout<<"send!"<<endl;
+//  std::cout<<"send!"<<endl;
   socket.send();
 }
 

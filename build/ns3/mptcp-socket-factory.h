@@ -65,10 +65,15 @@ public:
 
   virtual Ptr<Socket> CreateSocket (void);
 
+    uint32_t getMpCcAlgo() const ;
+
+	void setMpCcAlgo(uint32_t mpCcAlgo);
+
 protected:
   virtual void DoDispose (void);
 private:
   Ptr<TcpL4Protocol> m_tcp; //!< the associated TCP L4 protocol
+  uint32_t m_mp_cc_algo;
 };
 
 } // namespace ns3

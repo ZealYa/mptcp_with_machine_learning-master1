@@ -11,7 +11,7 @@ link_c_BER="0.000"
 mpcc_algo="0" #0:LIA 1:OLIA
 topology_id="0"
 mptcpApp="1"
-duration="100"
+duration="20"
 
 function runSet() {
   sudo python3 ./machineLearning/rl_server.py -f "${PyConfig["forceReply"]}" -m "${PyConfig["maxEpisode"]}" -i "${PyConfig["SwitchInterval"]}" -d "${PyConfig["duration"]}" &
@@ -31,9 +31,10 @@ function runSet() {
                 --link_a_delay="${Ns3Config["link_a_delay"]}" --link_b_delay="${Ns3Config["link_b_delay"]}" --link_c_delay="${Ns3Config["link_c_delay"]}"\
                                 --link_b_BER="${Ns3Config["link_b_BER"]}" --link_c_BER="${Ns3Config["link_c_BER"]}"  --tcp_buffer_size="$tcpBuffer" --router_b_buffer_size="$routerBBuffer"\
                                 --router_c_buffer_size="$routerCBuffer" --topology_id="$topology_id" --mpcc_algo="$mpcc_algo" --mptcpApp="$mptcpApp" --duration="$duration"";
+    python3  ./Analysis.py -d "${PyConfig["duration"]} " -m "${PyConfig["mpcc_algo"]} "
   done
   
-  python3  ./Analysis.py -d "${PyConfig["duration"]} " -m "${PyConfig["mpcc_algo"]} "
+  
 
 
 }
@@ -41,7 +42,7 @@ function runSet() {
 #####################
 unset PyConfig; unset Ns3Config; declare -A PyConfig; declare -A Ns3Config
 scheduler="RTT"; #experiment="Exp11"
-PyConfig+=(["duration"]=$duration ["mpcc_algo"]=$mpcc_algo ["maxEpisode"]=1 )
-Ns3Config+=(["link_a_BW"]="30000Kbps" ["link_b_BW"]="10000Kbps" ["link_c_BW"]="10000Kbps" ["link_a_delay"]="30ms" ["link_b_delay"]="30ms" ["link_c_delay"]="30ms" ["link_b_BER"]="$link_b_BER" ["link_c_BER"]="$link_c_BER")
+PyConfig+=(["duration"]=$duration ["mpcc_algo"]=$mpcc_algo ["maxEpisode"]=100000 )
+Ns3Config+=(["link_a_BW"]="30000Kbps" ["link_b_BW"]="500Kbps" ["link_c_BW"]="500Kbps" ["link_a_delay"]="30ms" ["link_b_delay"]="30ms" ["link_c_delay"]="30ms" ["link_b_BER"]="$link_b_BER" ["link_c_BER"]="$link_c_BER")
 
 runSet

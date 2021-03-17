@@ -1363,7 +1363,7 @@ TcpSocketBase::ReceivedAck (Ptr<Packet> packet, const TcpHeader& tcpHeader)
   //update the l_1r for olia
   this->set2r(this->get2r()+bytesAcked);
   this->setlr(this->get1r()>this->get2r()?this->get1r():this->get2r());
-  NS_LOG_UNCOND("RTT:"<<this->GetRttEstimator()->GetEstimate().GetMicroSeconds()<<endl);
+//  NS_LOG_UNCOND("RTT:"<<this->GetRttEstimator()->GetEstimate().GetMicroSeconds()<<endl);
 
 
 //  NS_LOG_UNCOND(endl<<"Tcp id"<<this->m_tcb<<" received ack!");

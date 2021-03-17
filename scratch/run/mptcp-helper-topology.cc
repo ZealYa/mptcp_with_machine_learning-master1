@@ -88,7 +88,7 @@ NetDeviceContainer PointToPointCreate(Ptr<Node> startNode,
   NS_ASSERT(queueSize > 0);
   pointToPoint.SetQueue("ns3::DropTailQueue",
                         "MaxPackets", UintegerValue(queueSize));
-  pointToPoint.EnablePcapAll ("mptcp");
+//  pointToPoint.EnablePcapAll ("mptcp");
   NetDeviceContainer linkedDevices;
   linkedDevices = pointToPoint.Install (linkedNodes);
 

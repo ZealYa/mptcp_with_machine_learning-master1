@@ -1,0 +1,6 @@
+model_checkpoint_path: "critic-network-18888"
+all_model_checkpoint_paths: "critic-network-18884"
+all_model_checkpoint_paths: "critic-network-18885"
+all_model_checkpoint_paths: "critic-network-18886"
+all_model_checkpoint_paths: "critic-network-18887"
+all_model_checkpoint_paths: "critic-network-18888"

@@ -1,4 +1,5 @@
 import socket
+import json
 import pandas
 import numpy as np
 import matplotlib.pyplot as plt
@@ -149,24 +150,18 @@ def IsInt(s):
 
 class DataRecorder():
 
-    def __init__(self, rttRecord, cWndRecord, rWndRecord, unAckRecord, availableTxBufferRecord, schedulerIdRecord, metaRecord):
+    def __init__(self):
         self.next_seq_num = 0
         self.data = {}
         self.action = []
-        self.rttRecord = rttRecord
-        self.cWndRecord = cWndRecord
-        self.rWndRecord = rWndRecord
-        self.unAckRecord = unAckRecord
-        self.availableTxBufferRecord = availableTxBufferRecord
-        self.metaRecord = metaRecord
-        self.schedulerIdRecord = schedulerIdRecord
+
 
     def add_one_record(self, str_data):
         # global g_TcWnd0
         # global g_TcWnd1
         # name#value$name$value...
         # str_data = str_data.encode('utf-8')
-        print(str_data)
+        # print(str_data)
         str_data=str_data.decode()
 
         pair_list = str_data.split("$")
@@ -185,12 +180,12 @@ class DataRecorder():
         # neighbour TCP segments must not combined into one
         assert one_row["size"] == len(one_row)
         # assert one_row["ssn"] == self.next_seq_num
-        self.rttRecord.addRTTRecord(one_row)
-        self.cWndRecord.addCwndRecord(one_row)
-        self.rWndRecord.addRwndRecord(one_row)
-        self.unAckRecord.addUnAckRecord(one_row)
-        self.availableTxBufferRecord.addTxBufferRecord(one_row)
-        self.metaRecord.addMetaRecord(one_row)
+        # self.rttRecord.addRTTRecord(one_row)
+        # self.cWndRecord.addCwndRecord(one_row)
+        # self.rWndRecord.addRwndRecord(one_row)
+        # self.unAckRecord.addUnAckRecord(one_row)
+        # self.availableTxBufferRecord.addTxBufferRecord(one_row)
+        # self.metaRecord.addMetaRecord(one_row)
         self.data[self.next_seq_num] = one_row
         self.next_seq_num += 1          
 
@@ -202,8 +197,8 @@ class DataRecorder():
 
     def add_pair_to_last_record(self, name, value):
         self.data[self.next_seq_num-1][name] = value
-        if name is "schedulerId":
-            self.schedulerIdRecord.addSchedulerId(timeStamp=self.data[self.next_seq_num-1]["time"], schedulerId=value)
+        # if name is "schedulerId":
+        #     self.schedulerIdRecord.addSchedulerId(timeStamp=self.data[self.next_seq_num-1]["time"], schedulerId=value)
 
     def print_all_data(self):
         #matthew  print("dic size: "+str(len(self.data)))
@@ -247,6 +242,12 @@ if __name__ == "__main__":
     (options, args) = parser.parse_args()
 
     episode_count = 1
+    accumulativeReward = 0
+    Total_thr = 0
+    Total_rtt = 0
+    Samples_count=400
+    event_record = {"Events":[]}
+    
     # RL = DeepQNetwork(n_actions=4, n_features=4, learning_rate=0.01, reward_decay=0.9,
     #                   e_greedy=0.9, replace_target_iter=200, memory_size=2000, output_graph=True)
     TestMode=False;
@@ -257,23 +258,34 @@ if __name__ == "__main__":
     print(int(options.MaxEpisode))
 
     # var = 1  # control exploration
-    f2 = open("/home/hong/workspace/mptcp/ns3/mptcp_output/calculate_reward_history2", 'w')
+    f2 = open("/home/matthew/mptcp_with_machine_learning-master1/mptcp_with_machine_learning-master/Analysis/calculate_reward_history2", 'w')
     f2.write("epsode,reward\n")
     while episode_count <= int(options.MaxEpisode):
-        rttRecorder = RecordRTT('/home/hong/workspace/mptcp/ns3/rl_training_data/' + str(episode_count) + '_client_rtt')
-        cWndRecorder = RecordCwnd('/home/hong/workspace/mptcp/ns3/rl_training_data/' + str(episode_count) + '_client_cWnd')
-        rWndRecorder = RecordRwnd('/home/hong/workspace/mptcp/ns3/rl_training_data/' + str(episode_count) + '_client_rWnd')
-        unAckRecorder = RecordUnAck('/home/hong/workspace/mptcp/ns3/rl_training_data/' + str(episode_count) + '_client_unAck')
-        availableTxBufferRecord = RecordAvailableTxBuffer('/home/hong/workspace/mptcp/ns3/rl_training_data/' + str(episode_count) + '_client_txBufferSize')
-        metaRecorder = RecordMeta('/home/hong/workspace/mptcp/ns3/rl_training_data/' + str(episode_count) + '_meta_socket')
-        schedulerIdRecord = RecordSchedulerId('/home/hong/workspace/mptcp/ns3/rl_training_data/' + str(episode_count) + '_schedulerId')
-        dataRecorder = DataRecorder(rttRecorder, cWndRecorder, rWndRecorder, unAckRecorder, availableTxBufferRecord, schedulerIdRecord, metaRecorder)
+        # rttRecorder = RecordRTT('/home/matthew/mptcp_with_machine_learning-master1/mptcp_with_machine_learning-master/Analysis/rl_training_data/' + str(episode_count) + '_client_rtt')
+        # cWndRecorder = RecordCwnd('/home/matthew/mptcp_with_machine_learning-master1/mptcp_with_machine_learning-master/Analysis/rl_training_data/' + str(episode_count) + '_client_cWnd')
+        # rWndRecorder = RecordRwnd('/home/matthew/mptcp_with_machine_learning-master1/mptcp_with_machine_learning-master/Analysis/rl_training_data/' + str(episode_count) + '_client_rWnd')
+        # unAckRecorder = RecordUnAck('/home/matthew/mptcp_with_machine_learning-master1/mptcp_with_machine_learning-master/Analysis/rl_training_data/' + str(episode_count) + '_client_unAck')
+        # availableTxBufferRecord = RecordAvailableTxBuffer('/home/matthew/mptcp_with_machine_learning-master1/mptcp_with_machine_learning-master/Analysis/rl_training_data/' + str(episode_count) + '_client_txBufferSize')
+        # metaRecorder = RecordMeta('/home/matthew/mptcp_with_machine_learning-master1/mptcp_with_machine_learning-master/Analysis/rl_training_data/' + str(episode_count) + '_meta_socket')
+        # schedulerIdRecord = RecordSchedulerId('/home/matthew/mptcp_with_machine_learning-master1/mptcp_with_machine_learning-master/Analysis/rl_training_data/' + str(episode_count) + '_schedulerId')
+        dataRecorder = DataRecorder()
+        event={}
+        event["Name"]="Episode"
+        event["episode"]=episode_count
+        event["Reward"]=accumulativeReward/Samples_count
+        event["throughput"]=Total_thr/Samples_count
+        event["latency"]=Total_rtt/Samples_count
+        event_record["Events"].append(event)
 
 
         if (episode_count)%100==0:
             TestMode = True
+            with open('whole_process_run.json','w') as f:
+                json.dump(event_record,f,indent=4)
         else:
             TestMode = False
+
+        
 
 
         # f3=open('/home/hong/workspace/mptcp/ns3/rl_training_data/' + str(episode_count) + '_throughput','w')
@@ -288,13 +300,13 @@ if __name__ == "__main__":
         #     print("")
         #
         #     # print("RL server ended too early! " + recv_str); exit() matthew
-        OldSeqNum = [0, 0]
-        OldAckTime = [0, 0]
-        OldAckTime2 = [0,0]
-        I=[0,0]
+        # OldSeqNum = [0, 0]
+        # OldAckTime = [0, 0]
+        # OldAckTime2 = [0,0]
+        # I=[0,0]
         dataRecorder.add_one_record(recv_str)  #
 
-        observation_before_action ,reward= ddpg.extract_observation(dataRecorder,1)
+        observation_before_action ,reward,thr,rtt = ddpg.extract_observation(dataRecorder,0)
         cwnd,ssThresh= extract_ssThresh(dataRecorder)
         # print("observation_before_action0:" + str(observation_before_action))
         # print("seg:"+str(segmentSize))
@@ -302,15 +314,18 @@ if __name__ == "__main__":
 
 
 
-        print("observation_before_action1:" + str(observation_before_action))
+        # print("observation_before_action1:" + str(observation_before_action))
         reward = calculate_reward(dataRecorder, reset = True)
 
         #print 'episode: ', episode_count
-        f = open("/home/hong/workspace/mptcp/ns3/mptcp_output/calculate_reward", 'w'); f.write("time,reward\n")
+        f = open("/home/matthew/mptcp_with_machine_learning-master1/mptcp_with_machine_learning-master/Analysis/calculate_reward", 'w'); 
+        f.write("time,reward\n")
 
 
         step, lastSchedulerTiming, accumulativeReward = 0, float("-inf"), 0 # float("-inf") ensures that a scheduler is choosen at first time
-        count=1
+        Total_thr= 0
+        Total_rtt=0
+        Samples_count=1
         totalThpt1=0
         totalThpt2=0
         count_done=0
@@ -321,10 +336,10 @@ if __name__ == "__main__":
             # Choose action
             #matthew
             # print ('recv_str: '+str(recv_str))
-            print ('observation: '+ str(observation_before_action))
+            # print ('observation: '+ str(observation_before_action))
             # print(count)
             # print(episode_count)
-            count=count+1
+            
             shouldUpdata = False
             # print("dataRecorder.get_latest_data()"+str(dataRecorder.get_latest_data()["time"]))
             # print("lastSchedulerTiming"+str(lastSchedulerTiming))
@@ -336,7 +351,7 @@ if __name__ == "__main__":
                 # accumulativeReward = 0
 
             if shouldUpdata:
-
+                Samples_count=Samples_count+1
 
                 # print("observation_before_action:"+str(observation_before_action))
                 if TestMode:
@@ -351,7 +366,7 @@ if __name__ == "__main__":
                 #     action[1]=random.random()*2-1
 
                 # new_cWnd = cWnd + np.int((cWnd * 1.0 / segmentSize) * a[0]) * segmentSize
-                print("matthew ddpg: " + str(dataRecorder.get_latest_data()["time"]) + ": is going to use action: " + str(action))
+                # print("matthew ddpg: " + str(dataRecorder.get_latest_data()["time"]) + ": is going to use action: " + str(action))
 
 
                 action=apply_action(socket, dataRecorder, action,segmentSize,cwnd[0],cwnd[1],ssThresh) # Apply action to environment
@@ -362,10 +377,11 @@ if __name__ == "__main__":
 
 
                 if(int(options.duration)==100):
-                    if dataRecorder.get_latest_data()["time"]==99900000:
+                    if int(dataRecorder.get_latest_data()["time"])>99000000:
                         print("The throughput of subflow1:" + str(totalThpt1) + "pkts/s")
                         print("The throughput of subflow2:" + str(totalThpt2) + "pkts/s")
                         print("The total throughput :" + str(totalThpt1 + totalThpt2) + "pkts/s")
+                        print("accumulativeReward in episode "+str(episode_count)+" is "+str(accumulativeReward))
 
 
                 if this_episode_done is True:
@@ -373,7 +389,7 @@ if __name__ == "__main__":
                         print("The throughput of subflow1:" + str(totalThpt1) + "pkts/s")
                         print("The throughput of subflow2:" + str(totalThpt2) + "pkts/s")
                         print("The total throughput :" + str(totalThpt1 + totalThpt2) + "pkts/s")
-                        print("accumulativeReward in episode "+str(episode_count)+" is "+str(accumulativeReward))
+                        
 
 
 
@@ -387,13 +403,15 @@ if __name__ == "__main__":
                 dataRecorder.add_one_record(recv_str)
 
 
-                observation_after_action, reward= ddpg.extract_observation(dataRecorder,1)
+                observation_after_action, reward,thr,rtt= ddpg.extract_observation(dataRecorder,0)
                 # print("observation_after_action:"+str(observation_after_action))
                 cwnd2, ssThresh2 = extract_ssThresh(dataRecorder)
                 # observation_after_action = nomorlize_obs(observation_after_action, 2147483647, 0)
                 # print("cwnd: "+str(cwnd2[0])+" "+str(cwnd2[1]))
                 # reward,throughput,totalThpt1,totalThpt2 = calculate_reward(dataRecorder)
                 accumulativeReward += reward
+                Total_thr += thr
+                Total_rtt += rtt
                 # print("accumulativeReward:"+str(accumulativeReward))
 
                 # # Update memory
@@ -406,7 +424,7 @@ if __name__ == "__main__":
                     #     var *= .9995
                     # print("Update var: "+str(var))
                     ddpg.learn()
-                    print("learning!")
+                    # print("learning!")
 
                 observation_before_action = observation_after_action
                 # ssThresh = ssThresh2
@@ -414,7 +432,7 @@ if __name__ == "__main__":
 
                 f.write(str(dataRecorder.get_latest_data()["time"]) + ',' + str(reward) + '\n')
                 # f3.write(str(dataRecorder.get_latest_data()["time"]) + ',' + str(throughput[0]) +',' + str(throughput[1])+ '\n')
-                print("step:" + str(step))
+                # print("step:" + str(step))
                 print("")
                 step += 1
             else:
@@ -438,9 +456,9 @@ if __name__ == "__main__":
         socket = None
         f.close()
 
-        copyfile("/home/hong/workspace/mptcp/ns3/mptcp_output/calculate_reward", '/home/hong/workspace/mptcp/ns3/rl_training_data/' + str(episode_count) + '_calculate_reward')
-        copyfile("/home/hong/workspace/mptcp/ns3/mptcp_output/mptcp_client", '/home/hong/workspace/mptcp/ns3/rl_training_data/' + str(episode_count) + '_mptcp_client')
-        copyfile("/home/hong/workspace/mptcp/ns3/mptcp_output/mptcp_drops", '/home/hong/workspace/mptcp/ns3/rl_training_data/' + str(episode_count) + '_mptcp_drops')
-        copyfile("/home/hong/workspace/mptcp/ns3/mptcp_output/mptcp_server", '/home/hong/workspace/mptcp/ns3/rl_training_data/' + str(episode_count) + '_mptcp_server')
-        copyfile("/home/hong/workspace/mptcp/ns3/mptcp_output/mptcp_monitor", '/home/hong/workspace/mptcp/ns3/rl_training_data/' + str(episode_count) + '_mptcp_monitor')
+        # copyfile("/home/matthew/mptcp_with_machine_learning-master1/mptcp_with_machine_learning-master/Analysis/calculate_reward", '/home/matthew/mptcp_with_machine_learning-master1/mptcp_with_machine_learning-master/Analysis/rl_training_data/' + str(episode_count) + '_calculate_reward')
+        # copyfile("/home/matthew/mptcp_with_machine_learning-master1/mptcp_with_machine_learning-master/Analysis/mptcp_output/mptcp_client", '/home/matthew/mptcp_with_machine_learning-master1/mptcp_with_machine_learning-master/Analysis/rl_training_data/' + str(episode_count) + '_mptcp_client')
+        # copyfile("/home/matthew/mptcp_with_machine_learning-master1/mptcp_with_machine_learning-master/Analysis/mptcp_output/mptcp_drops", '/home/matthew/mptcp_with_machine_learning-master1/mptcp_with_machine_learning-master/Analysis/rl_training_data/' + str(episode_count) + '_mptcp_drops')
+        # copyfile("/home/matthew/mptcp_with_machine_learning-master1/mptcp_with_machine_learning-master/Analysis/mptcp_output/mptcp_server", '/home/matthew/mptcp_with_machine_learning-master1/mptcp_with_machine_learning-master/Analysis/rl_training_data/' + str(episode_count) + '_mptcp_server')
+        # copyfile("/home/matthew/mptcp_with_machine_learning-master1/mptcp_with_machine_learning-master/Analysis/mptcp_output/mptcp_monitor", '/home/matthew/mptcp_with_machine_learning-master1/mptcp_with_machine_learning-master/Analysis/rl_training_data/' + str(episode_count) + '_mptcp_monitor')
         episode_count += 1

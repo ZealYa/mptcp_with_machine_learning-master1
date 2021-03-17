@@ -383,6 +383,9 @@ applied over all paths p in all_paths.
   virtual void OnSubflowUpdateCwnd(Ptr<MpTcpSubflow> subflow, uint32_t oldCwnd, uint32_t newCwnd);
 
 
+  virtual void  LogThpt(Ptr<MpTcpSubflow> sf);
+
+
   static void
   NotifySubflowNewState(Ptr<MpTcpMetaSocket> meta,
                         Ptr<MpTcpSubflow> sf,
@@ -679,6 +682,8 @@ protected: // protected methods
    * send as  much as possible
    * \return true if it send mappings
    */
+  virtual void RlInteractModule(int subflowid);
+
   virtual bool SendPendingData();
 
 
@@ -776,6 +781,8 @@ protected: // protected methods
   bool     m_tagSubflows;  //!<Whether or not to add the subflow packet tag
 
   ofstream cwnd_data;
+  ofstream rtt_data;
+  ofstream throughput_data;
 
   Ptr<MpTcpScheduler> m_scheduler;  //!<
 
@@ -796,6 +803,8 @@ protected: // protected methods
   EventId           m_retxEvent;       //!< Retransmission event
   EventId           m_lastAckEvent;
   EventId           m_timeWaitEvent;
+  EventId			m_rlInterEvent1;
+  EventId			m_rlInterEvent2;
 
   //Inherited from TcpSocket, setting the TCP parameters
 
@@ -819,14 +828,14 @@ protected: // protected methods
   bool RemoveFromActiveSubflowList(Ptr<MpTcpSubflow> sf);
   /************** The following about RL, added by Hong Jiaming **************/
   // ip: "127.0.0.1", port: 12345
-//  static rl::InterfaceToRL m_rlSocket;
+  static rl::InterfaceToRL m_rlSocket;
   std::vector<std::pair<Ptr<MpTcpScheduler>,TypeId> > m_schedulerArmoury; // Hong Jiaming: Added just for RL
 
-  void SendStates(rl::InterfaceToRL& socket);
+  void SendStates(rl::InterfaceToRL& socket,int subflowid);
 
   std::string RcvActions(rl::InterfaceToRL& socket);
 
-  void ApplyActions(std::string str_actions);
+  void ApplyActions(std::string str_actions,int subflowid);
 
   virtual void CreateSchedulerArmoury();
 

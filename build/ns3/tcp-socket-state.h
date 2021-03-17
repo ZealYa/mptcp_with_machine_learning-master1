@@ -101,6 +101,8 @@ public:
   // Segment
   uint32_t               m_segmentSize;     //!< Segment size
   SequenceNumber32       m_lastAckedSeq;    //!< Last sequence ACKed
+  std::vector<double>  m_segmentsAcked;
+  std::vector<double>  m_segmentsLoss;
 
   Ptr<TcpSocketImpl>     m_socket;          //!< Pointer to socket, usually Null
 

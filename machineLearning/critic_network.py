@@ -34,6 +34,7 @@ class CriticNetwork:
 			
 		self.update_target()
 		# self.load_network()
+		self.saver = tf.train.Saver()
 
 
 	def create_training_method(self):
@@ -116,7 +117,7 @@ class CriticNetwork:
 
 
 	def load_network(self):
-		self.saver = tf.train.Saver()
+		
 		checkpoint = tf.train.get_checkpoint_state("saved_critic_networks")
 		if checkpoint and checkpoint.model_checkpoint_path:
 			self.saver.restore(self.sess, checkpoint.model_checkpoint_path)

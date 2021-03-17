@@ -1,0 +1,2 @@
+timestamp,lastAckedSeq,highTxMark,availableTxBuffer,nextTxSeq,totalCwnd,unAckMeta
+611833,5673,17017,1158,17017,11344,11344

@@ -706,6 +706,7 @@ protected:
   virtual uint32_t getlr() const;
 
     virtual void setlr(uint32_t lr);
+
   /**
    * \brief Recv of a data, put into buffer, call L7 to get it if necessary
    * \param packet the packet

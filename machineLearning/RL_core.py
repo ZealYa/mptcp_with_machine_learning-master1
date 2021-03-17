@@ -104,12 +104,12 @@ class DDPG:
         # Select action a_t according to the current policy and exploration noise
         action = self.actor_network.action(state)
         noise = self.exploration_noise.noise()
-        print("noise:" + str(noise))
+        # print("noise:" + str(noise))
         return action + noise
 
     def choose_action(self, state):
         self.time_step += 1
-        print("_______________________choose_action_____________________")
+        # print("_______________________choose_action_____________________")
         action = self.actor_network.action(state)
         return action
 
@@ -123,7 +123,7 @@ class DDPG:
         if self.replay_buffer.count() > REPLAY_START_SIZE:
             if((episode_count+1)%100!= 0):
                 self.learn()
-                print("learn!")
+                # print("learn!")
             else:
                 self.actor_network.save_network(self.time_step)
                 self.critic_network.save_network(self.time_step)
@@ -134,7 +134,7 @@ class DDPG:
             self.exploration_noise.reset()
 
     def extract_observation(self,dataRecorder,subflow_index):
-        print("extracting...")
+        # print("extracting...")
         value_dic = dataRecorder.get_latest_data()
         # observation = np.zeros((4))
         observation = np.zeros((5))
@@ -194,9 +194,9 @@ class DDPG:
         if self.min_rtt>rtt_min:
             self.min_rtt=rtt_min
 
-       
-        reward  = thr_n_min-0.5*rtt_min-1000*loss_rate_n_min
-        print("reward:"+str(reward)+" thr_n_min:"+str(thr_n_min)+ " rtt_min:"+str(rtt_min)+" loss_rate_n_min :"+str(loss_rate_n_min))
+        
+        reward  = thr_n_min-1*(rtt_min-self.min_rtt)-1000*loss_rate_n_min
+        print("reward:"+str(reward)+" thr_n_min:"+str(thr_n_min)+ " rtt_min:"+str(rtt_min)+" self.min_rtt :"+str(self.min_rtt)+"  delta_rtt"+str(rtt_min-self.min_rtt))
         if self.max_bw!=0:
             state[0]=thr_n_min/self.max_bw
             # tmp=pacing_rate_n_min/self.max_bw
@@ -210,7 +210,7 @@ class DDPG:
         state=np.append(state,[self.min_rtt/rtt_min])
         
 
-        return state,reward
+        return state,reward,thr_n_min,rtt_min
 
 
 
@@ -369,7 +369,7 @@ def apply_action(interacter_socket, dataRecorder, action,segmentSize,cwnd1,cwnd2
         # if action[1]<0 :
         #     action[1]=-action[1]
         action_apply=action*2
-        print("is goint to use"+str(action_apply))
+        # print("is goint to use"+str(action_apply))
         # if(cwnd1>3000):
         #     # new_cWnd1 = cwnd1 + np.int((cwnd1 * 1.0 / segmentSize) * action[0]) * segmentSize
         #     new_cWnd1 = int(BOUND*action_apply[0])
@@ -398,7 +398,7 @@ def apply_action(interacter_socket, dataRecorder, action,segmentSize,cwnd1,cwnd2
         action = np.clip(action,segmentSize,BOUND)
 
 
-        print("action sent:" + str(action))
+        # print("action sent:" + str(action))
         tx_str = action_translator(dataRecorder, action)
 
 
@@ -407,7 +407,7 @@ def apply_action(interacter_socket, dataRecorder, action,segmentSize,cwnd1,cwnd2
     # print(tx_str)
     # print dataRecorder.get_latest_subflow_data()
     # print '-- apply action: dfdfddf'
-    print(tx_str+" over")
+    # print(tx_str+" over")
     interacter_socket.send(tx_str) # apply action
     return action2
 
@@ -460,7 +460,7 @@ def calculate_reward(dataRecorder, reset = False):
         totalThpt2=0
         for i in range(last_record['nbOfSubflows']):
             reward += last_record["lastAckedSeq" + str(i)]
-            print("subflow:"+str(i)+" lastAckedSeq:"+str(last_record["lastAckedSeq" + str(i)]))
+            # print("subflow:"+str(i)+" lastAckedSeq:"+str(last_record["lastAckedSeq" + str(i)]))
             throughput[i]=(last_record["lastAckedSeq" + str(i)]-calculate_reward.lastAckedSeq[i])/0.1
             calculate_reward.lastAckedSeq[i]=last_record["lastAckedSeq" + str(i)]
 

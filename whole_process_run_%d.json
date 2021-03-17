@@ -1,0 +1,74 @@
+{
+    "Events": [
+        {
+            "Name": "Episode",
+            "episode": 1,
+            "Reward": 0,
+            "throughput": 0,
+            "latency": 0.0
+        },
+        {
+            "Name": "Episode",
+            "episode": 2,
+            "Reward": 12683.199511,
+            "throughput": 13982.199511,
+            "latency": 228.1529411764706
+        },
+        {
+            "Name": "Episode",
+            "episode": 3,
+            "Reward": 15224.673205000003,
+            "throughput": 16558.673205000003,
+            "latency": 228.56470588235294
+        },
+        {
+            "Name": "Episode",
+            "episode": 4,
+            "Reward": 19106.935664,
+            "throughput": 20526.935664000004,
+            "latency": 229.57647058823528
+        },
+        {
+            "Name": "Episode",
+            "episode": 5,
+            "Reward": 13631.531506000001,
+            "throughput": 14827.531506000003,
+            "latency": 226.8372093023256
+        },
+        {
+            "Name": "Episode",
+            "episode": 6,
+            "Reward": 12422.163641000006,
+            "throughput": 13710.16364100001,
+            "latency": 227.90697674418604
+        },
+        {
+            "Name": "Episode",
+            "episode": 7,
+            "Reward": 12404.505180000006,
+            "throughput": 13648.505180000006,
+            "latency": 227.3953488372093
+        },
+        {
+            "Name": "Episode",
+            "episode": 8,
+            "Reward": 11541.190565,
+            "throughput": 12811.190565,
+            "latency": 227.69767441860466
+        },
+        {
+            "Name": "Episode",
+            "episode": 9,
+            "Reward": 13853.489325,
+            "throughput": 15330.489325,
+            "latency": 230.24705882352941
+        },
+        {
+            "Name": "Episode",
+            "episode": 10,
+            "Reward": 11967.175528,
+            "throughput": 13269.175528000003,
+            "latency": 228.06976744186048
+        }
+    ]
+}

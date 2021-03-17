@@ -241,6 +241,16 @@ public:
   Ptr<TcpSocketState> GetTcb(void);
   double GetDelayBandwidthProduct(void);
 
+	double getLastReceivedDataTime() const ;
+
+	void setLastReceivedDataTime(double lastReceivedDataTime) ;
+
+	double getThpt();
+
+	void setThpt(double thpt);
+	int64_t rtt_ms;
+	std::vector<double> v_packetReceived;
+
 protected:
   friend class MpTcpMetaSocket;
 
@@ -376,6 +386,10 @@ protected:
 
   MpTcpMappingContainer m_TxMappings;  //!< List of mappings to send
   MpTcpMappingContainer m_RxMappings;  //!< List of mappings to receive
+  double m_lastReceivedDataTime;//add by matthew
+  double m_thpt;//add by matthew
+
+//  ofstream throughput_data;
 
 
   Ptr<MpTcpMetaSocket> m_metaSocket;    //!< Meta
@@ -395,6 +409,7 @@ private:
   uint32_t m_localNonce;  //!< Store local host token, generated during the 3-way handshake
 
   uint32_t m_id; //!<Subflow identifier, used for debug purposes
+
 
 };
 
