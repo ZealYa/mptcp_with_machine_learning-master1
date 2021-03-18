@@ -1317,6 +1317,7 @@ void
 MpTcpSubflow::ReceivedData(Ptr<Packet> p, const TcpHeader& tcpHeader)
 {
   NS_LOG_FUNCTION (this << tcpHeader);
+  // std::cout<<" [node " << m_node->GetId () << ": ] "<<"still receiving data"<<endl;
   //NS_LOG_UNCOND ("Subflow id"<<GetSubflowId()<<"Data segment, seq=" << tcpHeader.GetSequenceNumber () <<
   //                " pkt size=" << p->GetSize () );
   //NS_LOG_UNCOND(p->GetSize()*8/1024/(Simulator::Now ().GetSeconds()-getLastReceivedDataTime()));

@@ -4,9 +4,9 @@
 declare -A PyConfig; declare -A Ns3Config
 
 tcpBuffer="252144"
-routerBBuffer="252144"
-routerCBuffer="252144"
-link_b_BER="0.000"
+routerBBuffer="30"
+routerCBuffer="30"
+link_b_BER="0.000"    #[0-0.0002]
 link_c_BER="0.000"
 mpcc_algo="0" #0:LIA 1:OLIA
 topology_id="0"
@@ -18,7 +18,7 @@ function runSet() {
 #
 ##  python3 ./machineLearning/rl_server.py -f "${PyConfig["forceReply"]}" -m "${PyConfig["maxEpisode"]}" -i "${PyConfig["SwitchInterval"]}"-p "${PyConfig["portnum2"]}" &
 #  # Delay to ensure rl_server.py starts to listen port before the start of ns3. (if not, rl::SocketException is thrown)
-  sleep 10
+  sleep 3
 #  for i in {1..1}; do ./waf --run scratch/run/run --command="%s --link_a_BW="${Ns3Config["link_a_BW"]}" --link_b_BW="${Ns3Config["link_b_BW"]}" --link_c_BW="${Ns3Config["link_c_BW"]}"\
 #                                --link_a_delay="${Ns3Config["link_a_delay"]}" --link_b_delay="${Ns3Config["link_b_delay"]}" --link_c_delay="${Ns3Config["link_c_delay"]}"\
 #                                --link_b_BER="${Ns3Config["link_b_BER"]}" --link_c_BER="${Ns3Config["link_c_BER"]}"  --tcp_buffer_size="$tcpBuffer" --router_b_buffer_size="$routerBBuffer"\
@@ -27,6 +27,19 @@ function runSet() {
   for (( episodeNum=1; episodeNum<=${PyConfig["maxEpisode"]}; episodeNum++ ))
   do
     echo "Training episode $episodeNum"
+    #random process
+    
+    bandwidth=`expr 4000 + $[RANDOM%2000]`"Kbps"
+    Ns3Config["link_b_BW"]=${bandwidth}
+    Ns3Config["link_c_BW"]=${bandwidth}
+    delay=`expr 30 + $[RANDOM%100]`"ms"
+    Ns3Config["link_b_delay"]=${delay}
+    Ns3Config["link_c_delay"]=${delay}
+    link_BER="0.000$[RANDOM%20]"
+    Ns3Config["link_b_BER"]=${link_BER}
+    Ns3Config["link_c_BER"]=${link_BER}
+    #finish random process
+
     sudo ./waf --run scratch/run/run --command="%s --link_a_BW="${Ns3Config["link_a_BW"]}" --link_b_BW="${Ns3Config["link_b_BW"]}" --link_c_BW="${Ns3Config["link_c_BW"]}"\
                 --link_a_delay="${Ns3Config["link_a_delay"]}" --link_b_delay="${Ns3Config["link_b_delay"]}" --link_c_delay="${Ns3Config["link_c_delay"]}"\
                                 --link_b_BER="${Ns3Config["link_b_BER"]}" --link_c_BER="${Ns3Config["link_c_BER"]}"  --tcp_buffer_size="$tcpBuffer" --router_b_buffer_size="$routerBBuffer"\
@@ -34,7 +47,7 @@ function runSet() {
     python3  ./Analysis.py -d "${PyConfig["duration"]} " -m "${PyConfig["mpcc_algo"]} "
   done
   
-  
+
 
 
 }
@@ -42,7 +55,7 @@ function runSet() {
 #####################
 unset PyConfig; unset Ns3Config; declare -A PyConfig; declare -A Ns3Config
 scheduler="RTT"; #experiment="Exp11"
-PyConfig+=(["duration"]=$duration ["mpcc_algo"]=$mpcc_algo ["maxEpisode"]=100000 )
-Ns3Config+=(["link_a_BW"]="30000Kbps" ["link_b_BW"]="500Kbps" ["link_c_BW"]="500Kbps" ["link_a_delay"]="30ms" ["link_b_delay"]="30ms" ["link_c_delay"]="30ms" ["link_b_BER"]="$link_b_BER" ["link_c_BER"]="$link_c_BER")
+PyConfig+=(["duration"]=$duration ["mpcc_algo"]=$mpcc_algo ["maxEpisode"]=1 )
+Ns3Config+=(["link_a_BW"]="30000Kbps" ["link_b_BW"]="500Kbps" ["link_c_BW"]="5000Kbps" ["link_a_delay"]="30ms" ["link_b_delay"]="30ms" ["link_c_delay"]="30ms" ["link_b_BER"]="$link_b_BER" ["link_c_BER"]="$link_c_BER")
 
 runSet

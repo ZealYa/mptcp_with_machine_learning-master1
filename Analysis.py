@@ -109,10 +109,10 @@ def AnalyzeClientthroughput(throughput_records0,throughput_records1,duration,str
     c_s_subflow_1_throughput,=plt.plot(list(client_throughput0[:,0]), list(client_throughput0[:,1]), 'b-') # convert cWnd time unit to millisecond
     c_s_subflow_2_throughput,=plt.plot(list(client_throughput1[:, 0]), list(client_throughput1[:, 1]), 'r-')  # convert cWnd time unit to millisecond
 
-    # print(list(client_throughput0[0:100,0]))
-    # print(list(client_throughput0[0:100,1]))
-    print("The type of the client_throughput0"+str(type(client_throughput0))+" average:"+str(np.mean(client_throughput0)))
-    print("The type of the client_throughput1" + str(type(client_throughput1))+" average:"+str(np.mean(client_throughput1)))
+    # print(list(client_throughput0))
+    # print(list(client_throughput0[0:,1]))
+    print("The type of the client_throughput0"+str(type(client_throughput0))+" average:"+str(np.mean(client_throughput0[0:,1])))
+    print("The type of the client_throughput1" + str(type(client_throughput1))+" average:"+str(np.mean(client_throughput1[0:,1])))
 
     plt.legend([c_s_subflow_1_throughput, c_s_subflow_2_throughput], ['subflow 1 cWnd', 'subflow 2 cWnd'], loc='best')
     plt.title('Time-throughput')

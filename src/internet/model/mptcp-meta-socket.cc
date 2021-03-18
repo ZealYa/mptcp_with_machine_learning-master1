@@ -579,7 +579,7 @@ MpTcpMetaSocket::OnSubflowClosed(Ptr<MpTcpSubflow> subflow, bool reset, MpTcpMap
   // This function is triggered by a tx_event, which calls MpTcpSubflow::ReTxTimeout, then finally comes to here.
   // Currently, let's focus on RL and come back to fix if we have time in the future.
   NS_FATAL_ERROR("Disable until meta-socket retransmission is implemented");
-
+  std::cout<<"Disable until meta-socket retransmission is implemented"<<endl;
   NS_LOG_LOGIC("Subflow " << subflow  << " definitely closed");
   //! TODO it should remove itself from the list of subflows and when 0 are active
   // it should call CloseAndNotify ?
@@ -638,6 +638,7 @@ bool MpTcpMetaSocket::AddToReceiveBuffer(Ptr<MpTcpSubflow> sf,
 }
 
 void MpTcpMetaSocket::LogThpt(Ptr<MpTcpSubflow> sf){//add by matthew
+
 	if((sf->GetEndpoint()->GetLocalAddress()==Ipv4Address("192.168.0.1"))){//add by matthew ：这里处理方法是确定发送主机的ip地址，然后只打印发送端的throupt
 	  	  for(uint32_t index = 0; index < this->GetNSubflows(); index++){
 	  		Ptr<MpTcpSubflow> subflow = this->GetSubflow(index);
@@ -1134,7 +1135,7 @@ void MpTcpMetaSocket::RlInteractModule(int subflowid)
 	if(subflowid==1){
 	m_rlInterEvent1=Simulator::Schedule(MilliSeconds(this->m_subflows[0]->GetRttEstimator()->GetEstimate().GetMicroSeconds()/1000),&MpTcpMetaSocket::RlInteractModule,this,1);
 	}else{
-//	m_rlInterEvent2=Simulator::Schedule(MilliSeconds(this->m_subflows[1]->GetRttEstimator()->GetEstimate().GetMicroSeconds()/1000),&MpTcpMetaSocket::RlInteractModule,this,2);
+	// m_rlInterEvent2=Simulator::Schedule(MilliSeconds(this->m_subflows[1]->GetRttEstimator()->GetEstimate().GetMicroSeconds()/1000),&MpTcpMetaSocket::RlInteractModule,this,2);
 	}
 
 
@@ -2515,7 +2516,7 @@ MpTcpMetaSocket::SendStates(rl::InterfaceToRL& socket,int subflowid){
 //  std::cout<<"start send!"<<endl;
   uint32_t nbOfSubflows = this->GetNSubflows();
   NS_ASSERT (nbOfSubflows == m_subflows.size()); // Hong Jiaming: Just for debug
-//  std::cout << "Hong Jiaming 21: number of active subflows:" << nbOfSubflows << std::endl;
+ std::cout << "Hong Jiaming 21: number of active subflows:" << nbOfSubflows << std::endl;
   // RttHistory_t
   // socket.add("time", Simulator::Now().GetNanoSeconds());
   socket.add("ssn", seq_num);
@@ -2546,12 +2547,15 @@ MpTcpMetaSocket::SendStates(rl::InterfaceToRL& socket,int subflowid){
     double lossTimesSum = std::accumulate(tcb->m_segmentsLoss.begin(), tcb->m_segmentsLoss.end(), 0);
 
     float loss_rate;
+    float unAck;
 
 //    std::cout<<"send! index:"<<index<< "tcb->m_segmentsAcked size: "<<tcb->m_segmentsAcked.size()<<" lossTimesSum"<<lossTimesSum<<" rtt_ms:"<<subflow->rtt_ms<<endl;
     if(throughput>0){
     	 loss_rate = (lossTimesSum * tcb->m_segmentSize)*8 / subflow->rtt_ms /throughput;
+       unAck = subflow->UnAckDataCount()/ subflow->rtt_ms /throughput;
     }else{
     	 loss_rate = 0;
+       unAck=0;
     }
 
 
@@ -2573,7 +2577,7 @@ MpTcpMetaSocket::SendStates(rl::InterfaceToRL& socket,int subflowid){
     socket.add("lastAckedSeq"+std::to_string(index), tcb->m_lastAckedSeq.GetValue());
     socket.add("highTxMark"+std::to_string(index), tcb->m_highTxMark.Get().GetValue());
     socket.add("rtt"+std::to_string(index), subflow->rtt_ms);
-    socket.add("unAck"+std::to_string(index), subflow->UnAckDataCount());
+    socket.add("unAck"+std::to_string(index), unAck);
     socket.add("availableTxBuffer"+std::to_string(index), subflow->GetTxBuffer()->Available()); // How many bytes usable in txBuffer
     socket.add("throughput"+std::to_string(index), throughput);
     socket.add("loss_rate"+std::to_string(index), loss_rate);
@@ -2637,7 +2641,7 @@ void
   if(subflowid==1){
 	  this->m_subflows[0]->GetTcb()->m_cWnd=uint32_t(std::stoi(strArray[0]));
   }else{
-	  this->m_subflows[1]->GetTcb()->m_cWnd=uint32_t(std::stoi(strArray[0]));
+	  // this->m_subflows[1]->GetTcb()->m_cWnd=uint32_t(std::stoi(strArray[0]));
   }
   this->m_subflows[1]->GetTcb()->m_cWnd=1500;
 //  std::cout<<"succeed!"<<endl;

@@ -133,9 +133,10 @@ class DDPG:
         if done:
             self.exploration_noise.reset()
 
-    def extract_observation(self,dataRecorder,subflow_index):
+    def extract_observation(self,dataRecorder,subflow_index,state_before):
         # print("extracting...")
         value_dic = dataRecorder.get_latest_data()
+        state_after=state_before.reshape(10,5)
         # observation = np.zeros((4))
         observation = np.zeros((5))
         t_cWnd=[0,0]
@@ -197,20 +198,24 @@ class DDPG:
         
         reward  = thr_n_min-1*(rtt_min-self.min_rtt)-1000*loss_rate_n_min
         print("reward:"+str(reward)+" thr_n_min:"+str(thr_n_min)+ " rtt_min:"+str(rtt_min)+" self.min_rtt :"+str(self.min_rtt)+"  delta_rtt"+str(rtt_min-self.min_rtt))
+        print("unAck:"+str(unAck_n_min))
         if self.max_bw!=0:
             state[0]=thr_n_min/self.max_bw
             # tmp=pacing_rate_n_min/self.max_bw
-            state=np.append(state,[5*loss_rate_n_min/self.max_bw])
-            state=np.append(state,[unAck_n_min/self.max_bw])
+            state=np.append(state,[5*loss_rate_n_min])
+            state=np.append(state,[unAck_n_min])
         else:
             state[0]=0
             state=np.append(state,[0])
             state=np.append(state,[0])
         state=np.append(state,[1400/cwnd])
         state=np.append(state,[self.min_rtt/rtt_min])
+
+        state_after=np.delete(state_after,[0],axis = 0)
+        state_after=np.append(state_after,state)
         
 
-        return state,reward,thr_n_min,rtt_min
+        return state_after,reward,thr_n_min,rtt_min
 
 
 

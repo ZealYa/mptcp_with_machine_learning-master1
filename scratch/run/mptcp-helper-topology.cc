@@ -466,6 +466,13 @@ vector<Ptr<NetDevice>> CreateNetwork5 (uint32_t packetSize,
     clientInterfaces.Add(interfaces.Get(1));
     // unstableDevices.push_back(linkedDevices.Get(0));
     // unstableDevices.push_back(linkedDevices.Get(1));
+    if(g_link_b_BER != 0){
+      std::cout << "Error model installed in link D-A" << std::endl;
+      Ptr<RateErrorModel> ptr_em = CreateObjectWithAttributes<RateErrorModel> ();
+      ptr_em->SetRate(g_link_b_BER);
+      linkedDevices.Get(0)->SetAttribute("ReceiveErrorModel", PointerValue (ptr_em));
+      linkedDevices.Get(1)->SetAttribute("ReceiveErrorModel", PointerValue (ptr_em));
+    }
 
 
 
@@ -484,21 +491,15 @@ vector<Ptr<NetDevice>> CreateNetwork5 (uint32_t packetSize,
     clientInterfaces.Add(interfaces.Get(1));
 
 
-    if(g_link_b_BER != 0){
-      std::cout << "Error model installed in link D-A" << std::endl;
-      Ptr<RateErrorModel> ptr_em = CreateObjectWithAttributes<RateErrorModel> ();
-      ptr_em->SetRate(g_link_b_BER);
-      linkedDevices.Get(0)->SetAttribute("ReceiveErrorModel", PointerValue (ptr_em));
-      linkedDevices.Get(1)->SetAttribute("ReceiveErrorModel", PointerValue (ptr_em));
-    }
+    
 
 
     if(g_link_c_BER != 0){
-              std::cout << "Error model installed in link D-A" << std::endl;
-              Ptr<RateErrorModel> ptr_em = CreateObjectWithAttributes<RateErrorModel> ();
-              ptr_em->SetRate(g_link_c_BER);
-              linkedDevices.Get(0)->SetAttribute("ReceiveErrorModel", PointerValue (ptr_em));
-              linkedDevices.Get(1)->SetAttribute("ReceiveErrorModel", PointerValue (ptr_em));
+      std::cout << "Error model installed in link D-A" << std::endl;
+      Ptr<RateErrorModel> ptr_em = CreateObjectWithAttributes<RateErrorModel> ();
+      ptr_em->SetRate(g_link_c_BER);
+      linkedDevices.Get(0)->SetAttribute("ReceiveErrorModel", PointerValue (ptr_em));
+      linkedDevices.Get(1)->SetAttribute("ReceiveErrorModel", PointerValue (ptr_em));
     }
     // unstableDevices.push_back(linkedDevices.Get(0));
     // unstableDevices.push_back(linkedDevices.Get(1));

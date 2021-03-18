@@ -252,7 +252,7 @@ if __name__ == "__main__":
     #                   e_greedy=0.9, replace_target_iter=200, memory_size=2000, output_graph=True)
     TestMode=False;
 
-    ddpg = DDPG(1, 5)
+    ddpg = DDPG(1, 50)
 
     print("Total epsodes:")
     print(int(options.MaxEpisode))
@@ -306,7 +306,9 @@ if __name__ == "__main__":
         # I=[0,0]
         dataRecorder.add_one_record(recv_str)  #
 
-        observation_before_action ,reward,thr,rtt = ddpg.extract_observation(dataRecorder,0)
+        observation_before_action=np.zeros(50)
+
+        observation_before_action ,reward,thr,rtt = ddpg.extract_observation(dataRecorder,0,observation_before_action)
         cwnd,ssThresh= extract_ssThresh(dataRecorder)
         # print("observation_before_action0:" + str(observation_before_action))
         # print("seg:"+str(segmentSize))
@@ -357,7 +359,7 @@ if __name__ == "__main__":
                 if TestMode:
                     action = ddpg.choose_action(observation_before_action)
                 else:
-                    action = ddpg.noise_action(observation_before_action)
+                    action = ddpg.choose_action(observation_before_action)
                 # print("matthew ddpg:"+str(action))
                 # action = np.clip(np.random.normal(action, var), -1, 1)
                 # if random.random()<var :
@@ -366,7 +368,7 @@ if __name__ == "__main__":
                 #     action[1]=random.random()*2-1
 
                 # new_cWnd = cWnd + np.int((cWnd * 1.0 / segmentSize) * a[0]) * segmentSize
-                # print("matthew ddpg: " + str(dataRecorder.get_latest_data()["time"]) + ": is going to use action: " + str(action))
+                print("matthew ddpg: " + str(dataRecorder.get_latest_data()["time"]) + ": is going to use action: " + str(action))
 
 
                 action=apply_action(socket, dataRecorder, action,segmentSize,cwnd[0],cwnd[1],ssThresh) # Apply action to environment
@@ -403,7 +405,7 @@ if __name__ == "__main__":
                 dataRecorder.add_one_record(recv_str)
 
 
-                observation_after_action, reward,thr,rtt= ddpg.extract_observation(dataRecorder,0)
+                observation_after_action, reward,thr,rtt= ddpg.extract_observation(dataRecorder,0,observation_before_action)
                 # print("observation_after_action:"+str(observation_after_action))
                 cwnd2, ssThresh2 = extract_ssThresh(dataRecorder)
                 # observation_after_action = nomorlize_obs(observation_after_action, 2147483647, 0)
@@ -417,13 +419,13 @@ if __name__ == "__main__":
                 # # Update memory
                 if TestMode== False:
                     ddpg.store_transition(observation_before_action, action, reward, observation_after_action,this_episode_done,episode_count)
-                print(str(observation_before_action)+",a= "+str(action)+", r="+str(reward)+",o:"+str(observation_after_action))
+                # print(str(observation_before_action)+",a= "+str(action)+", r="+str(reward)+",o:"+str(observation_after_action))
 
-                if (step > 200) and (step % 5 == 0) and TestMode==False:
-                    # if var > 0.1:
-                    #     var *= .9995
-                    # print("Update var: "+str(var))
-                    ddpg.learn()
+                # if (step > 200) and (step % 5 == 0) and TestMode==False:
+                #     # if var > 0.1:
+                #     #     var *= .9995
+                #     # print("Update var: "+str(var))
+                #     ddpg.learn()
                     # print("learning!")
 
                 observation_before_action = observation_after_action
