@@ -33,8 +33,8 @@ class CriticNetwork:
 		self.sess.run(tf.initialize_all_variables())
 			
 		self.update_target()
-		# self.load_network()
-		self.saver = tf.train.Saver()
+		self.load_network()
+		# self.saver = tf.train.Saver()
 
 
 	def create_training_method(self):

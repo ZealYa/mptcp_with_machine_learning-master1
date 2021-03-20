@@ -110,7 +110,7 @@ def AnalyzeClientthroughput(throughput_records0,throughput_records1,duration,str
     c_s_subflow_2_throughput,=plt.plot(list(client_throughput1[:, 0]), list(client_throughput1[:, 1]), 'r-')  # convert cWnd time unit to millisecond
 
     # print(list(client_throughput0))
-    # print(list(client_throughput0[0:,1]))
+    print(list(client_throughput0[0:,1]))
     print("The type of the client_throughput0"+str(type(client_throughput0))+" average:"+str(np.mean(client_throughput0[0:,1])))
     print("The type of the client_throughput1" + str(type(client_throughput1))+" average:"+str(np.mean(client_throughput1[0:,1])))
 
@@ -219,7 +219,7 @@ if __name__ == '__main__':
 
     plt.subplot(3, 1, 2)
 
-    throughput_records0, throughput_records1 ,max_thr= proprocess_throughput_data('throughput_data.txt')
+    throughput_records0, throughput_records1 ,max_thr= proprocess_throughput_data('thpt_py_recorder.txt')
     AnalyzeClientthroughput(throughput_records0, throughput_records1,duration,str_mpcc_algo,max_thr)
 
     # plt.figure(figsize=(20, 8))

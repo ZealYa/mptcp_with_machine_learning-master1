@@ -1135,7 +1135,7 @@ void MpTcpMetaSocket::RlInteractModule(int subflowid)
 	if(subflowid==1){
 	m_rlInterEvent1=Simulator::Schedule(MilliSeconds(this->m_subflows[0]->GetRttEstimator()->GetEstimate().GetMicroSeconds()/1000),&MpTcpMetaSocket::RlInteractModule,this,1);
 	}else{
-	// m_rlInterEvent2=Simulator::Schedule(MilliSeconds(this->m_subflows[1]->GetRttEstimator()->GetEstimate().GetMicroSeconds()/1000),&MpTcpMetaSocket::RlInteractModule,this,2);
+	m_rlInterEvent2=Simulator::Schedule(MilliSeconds(this->m_subflows[1]->GetRttEstimator()->GetEstimate().GetMicroSeconds()/1000),&MpTcpMetaSocket::RlInteractModule,this,2);
 	}
 
 
@@ -2530,6 +2530,7 @@ MpTcpMetaSocket::SendStates(rl::InterfaceToRL& socket,int subflowid){
   socket.add("availableTxBufferMeta", this->m_txBuffer->Available()); // How many bytes usable in txBuffer
   socket.add("nextTxSeqMeta", this->m_nextTxSequence.Get().GetValue());
   socket.add("totalCwndMeta", this->GetTotalCwnd());
+  socket.add("subflowid",uint32_t(subflowid-1));
   //GetTotalCwnd
 
   for(uint32_t index = 0; index < this->GetNSubflows(); index++){
@@ -2638,12 +2639,12 @@ void
   vector<string> strArray=split(recv_str,",");
 //  std::cout<<"strArray[0]"<<strArray[0]<<"subflow id:"<<subflowid<<endl;
 //  if(strArray.size() != 1){
-  if(subflowid==1){
-	  this->m_subflows[0]->GetTcb()->m_cWnd=uint32_t(std::stoi(strArray[0]));
-  }else{
-	  // this->m_subflows[1]->GetTcb()->m_cWnd=uint32_t(std::stoi(strArray[0]));
-  }
-  this->m_subflows[1]->GetTcb()->m_cWnd=1500;
+  // if(subflowid==1){
+	//   this->m_subflows[0]->GetTcb()->m_cWnd=20000;//=uint32_t(std::stoi(strArray[0]));
+  // }else{
+	//   this->m_subflows[1]->GetTcb()->m_cWnd=20000;//uint32_t(std::stoi(strArray[0]));
+  // }
+  // this->m_subflows[1]->GetTcb()->m_cWnd=1500;
 //  std::cout<<"succeed!"<<endl;
 
 //  }

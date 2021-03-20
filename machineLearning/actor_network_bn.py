@@ -30,8 +30,8 @@ class ActorNetwork:
 		self.sess.run(tf.initialize_all_variables())
 
 		self.update_target()
-		self.saver = tf.train.Saver()
-		# self.load_network()
+		# self.saver = tf.train.Saver()
+		self.load_network()
 		# self.create_network(state_dim,action_dim)
 
 	def create_training_method(self):

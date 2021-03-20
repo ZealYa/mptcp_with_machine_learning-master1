@@ -247,6 +247,7 @@ if __name__ == "__main__":
     Total_rtt = 0
     Samples_count=400
     event_record = {"Events":[]}
+    thpt_writer = open("thpt_py_recorder.txt", 'w')
     
     # RL = DeepQNetwork(n_actions=4, n_features=4, learning_rate=0.01, reward_decay=0.9,
     #                   e_greedy=0.9, replace_target_iter=200, memory_size=2000, output_graph=True)
@@ -293,6 +294,12 @@ if __name__ == "__main__":
         socket = Interacter_socket(host = '127.0.0.3', port = 12345)
         socket.listen()
         recv_str, this_episode_done = socket.recv()
+        print("type:")
+        if(type(recv_str)==type("str")):
+            socket.close()
+            socket = None
+            f.close()
+            continue
         last_rcvstr = recv_str
 
         # if this_episode_done:
@@ -310,6 +317,7 @@ if __name__ == "__main__":
 
         observation_before_action ,reward,thr,rtt = ddpg.extract_observation(dataRecorder,0,observation_before_action)
         cwnd,ssThresh= extract_ssThresh(dataRecorder)
+        
         # print("observation_before_action0:" + str(observation_before_action))
         # print("seg:"+str(segmentSize))
         segmentSize=1500
@@ -360,6 +368,7 @@ if __name__ == "__main__":
                     action = ddpg.choose_action(observation_before_action)
                 else:
                     action = ddpg.choose_action(observation_before_action)
+                    # action = ddpg.noise_action(observation_before_action)
                 # print("matthew ddpg:"+str(action))
                 # action = np.clip(np.random.normal(action, var), -1, 1)
                 # if random.random()<var :
@@ -406,6 +415,7 @@ if __name__ == "__main__":
 
 
                 observation_after_action, reward,thr,rtt= ddpg.extract_observation(dataRecorder,0,observation_before_action)
+                thpt_writer.write(str(dataRecorder.get_latest_data()['subflowid']) + ' ' + str(float(dataRecorder.get_latest_data()['time'])/10e5) + ' ' + str(thr) + '\n')
                 # print("observation_after_action:"+str(observation_after_action))
                 cwnd2, ssThresh2 = extract_ssThresh(dataRecorder)
                 # observation_after_action = nomorlize_obs(observation_after_action, 2147483647, 0)
@@ -426,11 +436,11 @@ if __name__ == "__main__":
                 #     #     var *= .9995
                 #     # print("Update var: "+str(var))
                 #     ddpg.learn()
-                    # print("learning!")
+                #     # print("learning!")
 
                 observation_before_action = observation_after_action
                 # ssThresh = ssThresh2
-                # cwnd = cwnd2
+                cwnd = cwnd2
 
                 f.write(str(dataRecorder.get_latest_data()["time"]) + ',' + str(reward) + '\n')
                 # f3.write(str(dataRecorder.get_latest_data()["time"]) + ',' + str(throughput[0]) +',' + str(throughput[1])+ '\n')
@@ -457,6 +467,7 @@ if __name__ == "__main__":
         socket.close()
         socket = None
         f.close()
+        thpt_writer.close()
 
         # copyfile("/home/matthew/mptcp_with_machine_learning-master1/mptcp_with_machine_learning-master/Analysis/calculate_reward", '/home/matthew/mptcp_with_machine_learning-master1/mptcp_with_machine_learning-master/Analysis/rl_training_data/' + str(episode_count) + '_calculate_reward')
         # copyfile("/home/matthew/mptcp_with_machine_learning-master1/mptcp_with_machine_learning-master/Analysis/mptcp_output/mptcp_client", '/home/matthew/mptcp_with_machine_learning-master1/mptcp_with_machine_learning-master/Analysis/rl_training_data/' + str(episode_count) + '_mptcp_client')

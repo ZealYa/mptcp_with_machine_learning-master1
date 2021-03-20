@@ -24,7 +24,7 @@ TAU = 0.01      # soft replacement
 MEMORY_CAPACITY = 1000000#10000
 BATCH_SIZE = 64#32
 
-BOUND=200000
+BOUND=200000000
 RENDER = False
 
 
@@ -196,7 +196,7 @@ class DDPG:
             self.min_rtt=rtt_min
 
         
-        reward  = thr_n_min-1*(rtt_min-self.min_rtt)-1000*loss_rate_n_min
+        reward  = thr_n_min-1*(rtt_min-self.min_rtt)-10*loss_rate_n_min
         print("reward:"+str(reward)+" thr_n_min:"+str(thr_n_min)+ " rtt_min:"+str(rtt_min)+" self.min_rtt :"+str(self.min_rtt)+"  delta_rtt"+str(rtt_min-self.min_rtt))
         print("unAck:"+str(unAck_n_min))
         if self.max_bw!=0:
@@ -369,32 +369,12 @@ def apply_action(interacter_socket, dataRecorder, action,segmentSize,cwnd1,cwnd2
     if action[0]== -999:
         tx_str = "[-999,-999]"
     else:
-        # if action[0]<0 :
-        #     action[0]=-action[0]
-        # if action[1]<0 :
-        #     action[1]=-action[1]
+
         action_apply=action*2
-        # print("is goint to use"+str(action_apply))
-        # if(cwnd1>3000):
-        #     # new_cWnd1 = cwnd1 + np.int((cwnd1 * 1.0 / segmentSize) * action[0]) * segmentSize
-        #     new_cWnd1 = int(BOUND*action_apply[0])
-        #     if new_cWnd1 <segmentSize:
-        #         new_cWnd1 = segmentSize
-        # else:
-        #     new_cWnd1=cwnd1*2
-        #     # action2[0]=1
-        #     action2[0]=2*(new_cWnd1/BOUND-0.5)
-        # if(cwnd2>3000):
-        #     # new_cWnd2 = cwnd2 + np.int((cwnd2 * 1.0 / segmentSize) * action[1]) * segmentSize
-        #     new_cWnd2 = int(BOUND * action_apply[1])
-        #     if new_cWnd2 <segmentSize:
-        #         new_cWnd2 = segmentSize
-        # else:
-        #     new_cWnd2=cwnd2*2
-        #     # action2[1]=1
-        #     action2[1] =2*(new_cWnd2 / BOUND-0.5)
 
         new_cWnd1 = cwnd1*math.pow(4,action)
+        # print("cwnd1:"+str(cwnd1)+" action:"+str(action)+"new_cWnd1:"+str(new_cWnd1))
+
         # new_cWnd2 = int(BOUND * action_apply[1])
 
 
@@ -409,7 +389,7 @@ def apply_action(interacter_socket, dataRecorder, action,segmentSize,cwnd1,cwnd2
 
 
 
-    # print(tx_str)
+    print(tx_str)
     # print dataRecorder.get_latest_subflow_data()
     # print '-- apply action: dfdfddf'
     # print(tx_str+" over")
