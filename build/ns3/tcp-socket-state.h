@@ -97,6 +97,8 @@ public:
   uint32_t               m_initialCWnd;     //!< Initial cWnd value
   uint32_t               m_initialSsThresh; //!< Initial Slow Start Threshold value
 
+  //For RL
+  uint32_t m_rlState;
 
   // Segment
   uint32_t               m_segmentSize;     //!< Segment size
@@ -109,6 +111,7 @@ public:
   TracedValue<TcpCongState_t> m_congState;    //!< State in the Congestion state machine
   TracedValue<SequenceNumber32> m_highTxMark; //!< Highest seqno ever sent, regardless of ReTx
   TracedValue<SequenceNumber32> m_nextTxSequence; //!< Next seqnum to be sent (SND.NXT), ReTx pushes it back
+
 
   /**
    * \brief Get cwnd in segments rather than bytes

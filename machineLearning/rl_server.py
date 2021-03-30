@@ -13,6 +13,7 @@ from RL_core import DDPG
 from RL_core import extract_ssThresh
 from RL_core import calculate_reward
 from RL_core import apply_action
+from RL_core import map_action
 from shutil import copyfile
 
 class RecordRTT():
@@ -228,6 +229,24 @@ def nomorlize_obs(obs,h,l):
     return (obs-o_c) /o_sc
 
 
+class flow_state(object):
+    """
+    docstring
+    """
+    Ordinary = 0
+    EI_c_1 = 1 #
+    EI_r_1 = 2 #
+    EI_c_2 = 3 #receive ack of the class action and generate the reward 
+    EI_r_2 = 4 #receive ack of the rl action and generate the reward
+
+EI_sequence=[0,0] #0:cl first 1:rl first
+u_1=[0,0] 
+u_2=[0,0] 
+u_3=[0,0] 
+
+r=[0,0]
+
+
 
 if __name__ == "__main__":
 
@@ -247,7 +266,15 @@ if __name__ == "__main__":
     Total_rtt = 0
     Samples_count=400
     event_record = {"Events":[]}
-    thpt_writer = open("thpt_py_recorder.txt", 'w')
+    
+
+    subflow1_state=flow_state.Ordinary
+    subflow2_state=flow_state.Ordinary
+    cwnd_list=[[],[]]
+    # currentState=0
+    # currentCwnd=0
+
+    
     
     # RL = DeepQNetwork(n_actions=4, n_features=4, learning_rate=0.01, reward_decay=0.9,
     #                   e_greedy=0.9, replace_target_iter=200, memory_size=2000, output_graph=True)
@@ -262,6 +289,7 @@ if __name__ == "__main__":
     f2 = open("/home/matthew/mptcp_with_machine_learning-master1/mptcp_with_machine_learning-master/Analysis/calculate_reward_history2", 'w')
     f2.write("epsode,reward\n")
     while episode_count <= int(options.MaxEpisode):
+        
         # rttRecorder = RecordRTT('/home/matthew/mptcp_with_machine_learning-master1/mptcp_with_machine_learning-master/Analysis/rl_training_data/' + str(episode_count) + '_client_rtt')
         # cWndRecorder = RecordCwnd('/home/matthew/mptcp_with_machine_learning-master1/mptcp_with_machine_learning-master/Analysis/rl_training_data/' + str(episode_count) + '_client_cWnd')
         # rWndRecorder = RecordRwnd('/home/matthew/mptcp_with_machine_learning-master1/mptcp_with_machine_learning-master/Analysis/rl_training_data/' + str(episode_count) + '_client_rWnd')
@@ -277,7 +305,8 @@ if __name__ == "__main__":
         event["throughput"]=Total_thr/Samples_count
         event["latency"]=Total_rtt/Samples_count
         event_record["Events"].append(event)
-
+        thpt_record=""
+        rtt_record=""
 
         if (episode_count)%100==0:
             TestMode = True
@@ -293,6 +322,7 @@ if __name__ == "__main__":
         # f3.write("timestamp,throughput0,throughput1\n")
         socket = Interacter_socket(host = '127.0.0.3', port = 12345)
         socket.listen()
+        print("[Py]episode_count:"+str(episode_count))
         recv_str, this_episode_done = socket.recv()
         print("type:")
         if(type(recv_str)==type("str")):
@@ -314,9 +344,17 @@ if __name__ == "__main__":
         dataRecorder.add_one_record(recv_str)  #
 
         observation_before_action=np.zeros(50)
-
-        observation_before_action ,reward,thr,rtt = ddpg.extract_observation(dataRecorder,0,observation_before_action)
-        cwnd,ssThresh= extract_ssThresh(dataRecorder)
+        current_subflowid=int(dataRecorder.get_latest_data()['subflowid'])
+        observation_before_action ,reward,thr,rtt = ddpg.extract_observation(dataRecorder,current_subflowid,observation_before_action)
+        
+        cwnd,ssThresh,subflowstates= extract_ssThresh(dataRecorder)
+        prev_cwnd=cwnd
+        # if current_subflowid  == 0:
+        #     currentState=subflowstates[0]
+        #     currentCwnd=cwnd[0]
+        # else:
+        #     currentState=subflowstates[1]
+        #     currentCwnd=cwnd[1]
         
         # print("observation_before_action0:" + str(observation_before_action))
         # print("seg:"+str(segmentSize))
@@ -325,11 +363,13 @@ if __name__ == "__main__":
 
 
         # print("observation_before_action1:" + str(observation_before_action))
-        reward = calculate_reward(dataRecorder, reset = True)
+        # reward = calculate_reward(dataRecorder, reset = True)
 
         #print 'episode: ', episode_count
         f = open("/home/matthew/mptcp_with_machine_learning-master1/mptcp_with_machine_learning-master/Analysis/calculate_reward", 'w'); 
         f.write("time,reward\n")
+        thpt_writer = open("throughput_data.txt", 'w')
+        rtt_writer = open("rtt_data.txt", 'w')
 
 
         step, lastSchedulerTiming, accumulativeReward = 0, float("-inf"), 0 # float("-inf") ensures that a scheduler is choosen at first time
@@ -339,6 +379,7 @@ if __name__ == "__main__":
         totalThpt1=0
         totalThpt2=0
         count_done=0
+        
 
 
 
@@ -364,11 +405,7 @@ if __name__ == "__main__":
                 Samples_count=Samples_count+1
 
                 # print("observation_before_action:"+str(observation_before_action))
-                if TestMode:
-                    action = ddpg.choose_action(observation_before_action)
-                else:
-                    action = ddpg.choose_action(observation_before_action)
-                    # action = ddpg.noise_action(observation_before_action)
+                
                 # print("matthew ddpg:"+str(action))
                 # action = np.clip(np.random.normal(action, var), -1, 1)
                 # if random.random()<var :
@@ -377,13 +414,170 @@ if __name__ == "__main__":
                 #     action[1]=random.random()*2-1
 
                 # new_cWnd = cWnd + np.int((cWnd * 1.0 / segmentSize) * a[0]) * segmentSize
-                print("matthew ddpg: " + str(dataRecorder.get_latest_data()["time"]) + ": is going to use action: " + str(action))
+                print("[Py]matthew:lastAckedSeqMeta:"+str(dataRecorder.get_latest_data()["lastAckedSeqMeta"]))
+                print("[Py]matthew:current_subflowId:"+str(dataRecorder.get_latest_data()['subflowid']))
+                # if current_subflowid  == 0:
+                #     currentState=subflowstates[0]
+                #     currentCwnd=cwnd[0]
+                # else:
+                #     currentState=subflowstates[1]
+                #     currentCwnd=cwnd[1]
+
+                r[current_subflowid]=reward
+                a_rl=0
+                print("[Py]matthew Time: " + str(dataRecorder.get_latest_data()["time"]))#+"obs:"+str(observation_before_action))
+                print("[Py]prev:"+str(prev_cwnd[current_subflowid]))
+                #*****Traditional RL Part******
+                if TestMode:
+                    a_rl = ddpg.choose_action(observation_before_action)
+                    a_final = map_action(dataRecorder, a_rl,segmentSize,prev_cwnd[current_subflowid],58000)
+                    # a_final=50000
+                    prev_cwnd[current_subflowid]=a_final
+                else:
+                    a_rl = ddpg.choose_action(observation_before_action)
+                    # a_rl = ddpg.noise_action(observation_before_action)
+                    a_final = map_action(dataRecorder, a_rl,segmentSize,prev_cwnd[current_subflowid],58000)
+                    # a_final=50000
+                    prev_cwnd[current_subflowid]=a_final
+                
+                print("action:"+str(a_rl))
+                #*****Traditional RL Part end!******
+                #*****MP-Libra Part******
+                # if subflowstates[current_subflowid]==flow_state.Ordinary:
+                #     print("[Py]matthew:stage:Ordinary")
+                            
+                #     cwnd_list[current_subflowid].clear()
+                #     a_rl = ddpg.choose_action(observation_before_action)
+                    
+                #     x_r = map_action(dataRecorder, a_rl,segmentSize,prev_cwnd[current_subflowid])
+                #     x_c = cwnd[current_subflowid]
+                #     print("[Py]x_r:"+str(x_r)+" x_c:"+str(x_c)+" prev_cwnd:"+str(prev_cwnd[current_subflowid]))
+                #     if np.abs(x_r-x_c)>=0.2*prev_cwnd[current_subflowid]:#prev_cwnd not defined yet
+                #         if(x_r-prev_cwnd[current_subflowid])*(x_c-prev_cwnd[current_subflowid])>0 :
+                #             if x_r>x_c:
+                #                 cwnd_list[current_subflowid].append(x_c)
+                #                 cwnd_list[current_subflowid].append(x_r)
+                #                 print(str(cwnd_list[current_subflowid]))
+                #                 EI_sequence[current_subflowid]=1
+                #                 a_final=cwnd_list[current_subflowid][0]
+                #                 subflowstates[current_subflowid]=flow_state.EI_c_1
+                #             else:
+                #                 cwnd_list[current_subflowid].append(x_r)
+                #                 cwnd_list[current_subflowid].append(x_c)
+                #                 print(str(cwnd_list[current_subflowid]))
+                #                 EI_sequence[current_subflowid]=0
+                #                 a_final=cwnd_list[current_subflowid][0]
+                #                 subflowstates[current_subflowid]=flow_state.EI_r_1
+                #         else:
+                #             if x_r>x_c:
+                #                 cwnd_list[current_subflowid].append(x_c)
+                #                 cwnd_list[current_subflowid].append(x_r)
+                #                 print(str(cwnd_list[current_subflowid]))
+                #                 EI_sequence[current_subflowid]=1
+                #                 a_final=cwnd_list[current_subflowid][0]
+                #                 subflowstates[current_subflowid]=flow_state.EI_c_1
+                #             else:
+                #                 cwnd_list[current_subflowid].append(x_r)
+                #                 cwnd_list[current_subflowid].append(x_c)
+                #                 print(str(cwnd_list[current_subflowid]))
+                #                 EI_sequence[current_subflowid]=0
+                #                 a_final=cwnd_list[current_subflowid][0]
+                #                 subflowstates[current_subflowid]=flow_state.EI_r_1   
+                #     else:
+                #         a_final=x_c
+                #     a_final=x_r
+                # elif subflowstates[current_subflowid]==flow_state.EI_c_1:
+                #     print("[Py]matthew:stage:EI_c_1")
+                #     if EI_sequence[current_subflowid]==1:#cl先行 下一个状态是EI_r_1
+                #         u_1[current_subflowid]=r[current_subflowid]/rtt#得到u1但是后续需要除episode的长度
+                #         print("[Py]u_1:"+str(u_1[current_subflowid]))
+                #         subflowstates[current_subflowid]=flow_state.EI_r_1
+                #         a_final=cwnd_list[current_subflowid][1]
+                #     else:
+                #         subflowstates[current_subflowid]=flow_state.EI_r_2
+                #         a_final=prev_cwnd[current_subflowid]
+                # elif subflowstates[current_subflowid]==flow_state.EI_r_1:
+                #     print("[Py]matthew:stage:EI_r_1")
+                #     if EI_sequence[current_subflowid]==0:#rl先行 下一个状态是EI_c_1
+                #         u_1[current_subflowid]=r[current_subflowid]/rtt#得到u1但是后续需要除episode的长度
+                #         print("[Py]u_1:"+str(u_1[current_subflowid]))
+                #         subflowstates[current_subflowid]=flow_state.EI_c_1
+                #         a_final=cwnd_list[current_subflowid][1]
+                #     else:
+                #         subflowstates[current_subflowid]=flow_state.EI_c_2
+                #         a_final=prev_cwnd[current_subflowid]
+
+                # elif subflowstates[current_subflowid]==flow_state.EI_c_2:
+                #     print("[Py]matthew:stage:EI_c_2")
+                #     if EI_sequence[current_subflowid]==1:#cl先行 下一个动作是EI_r_2
+                #         u_2[current_subflowid]=2*r[current_subflowid]/rtt#得到u2但是后续需要除episode的长度
+                #         print("[Py]u_2:"+str(u_2[current_subflowid]))
+                #         subflowstates[current_subflowid]=flow_state.EI_r_2
+                #                 # a_final=a_r
+                #     else:
+                #         subflowstates[current_subflowid]=flow_state.Ordinary#Evaluation结束进入Ordinary
+                #         u_3[current_subflowid]=2*r[current_subflowid]/rtt
+                #         print("[Py]matthew:u_1:"+str(u_1[current_subflowid])+"  u_2:"+str(u_2[current_subflowid])+" u_3:"+str(u_3[current_subflowid]))
+                #         if max(u_2[current_subflowid],u_3[current_subflowid])>=u_1[current_subflowid]:
+                #             if(u_2[current_subflowid]>u_3[current_subflowid]):#EI——sequence=1 rl先行
+                #                 a_final=cwnd_list[current_subflowid][0]
+                #                 # strRLCWND_record.strip()
+                #                 # strRLCWND_record+=" 1"
+                #                 prev_cwnd[current_subflowid]=a_final
+                #                 # rl_count+=1
+                #             else:
+                #                 a_final=cwnd_list[current_subflowid][1]
+                #                 # print(strCLCWND_record)
+                #                 # strCLCWND_record.strip('')
+                #                 # strCLCWND_record+=" 1"
+                #                 # print(strCLCWND_record)
+                #                 prev_cwnd[current_subflowid]=a_final
+                #                 # cl_count+=1
+                #         else:
+                #             a_final=prev_cwnd[current_subflowid]
+                #         # strCWND_record+=(str(int((current_time-start)*1000000)/1000000)+" "+str(a_final)+"\n")
+                # elif subflowstates[current_subflowid]==flow_state.EI_r_2:
+                #     print("[Py]matthew:stage:EI_r_2")
+                #     if EI_sequence[current_subflowid]==0:#rl先行 下一个动作是EI_c_2
+                #         u_2[current_subflowid]=2*r[current_subflowid]/rtt#得到u2但是后续需要除episode的长度
+                #         print("[Py]u_2:"+str(u_2[current_subflowid]))
+                #         subflowstates[current_subflowid]=flow_state.EI_c_2
+                #                 # a_final=a_r
+                #     else:
+                #         subflowstates[current_subflowid]=flow_state.Ordinary#Evaluation结束进入Ordinary
+                #         u_3[current_subflowid]=2*r[current_subflowid]/rtt
+                #         print("[Py]matthew:u_1:"+str(u_1[current_subflowid])+"  u_2:"+str(u_2[current_subflowid])+" u_3:"+str(u_3[current_subflowid]))
+                #         if max(u_2[current_subflowid],u_3[current_subflowid])>=u_1[current_subflowid]:
+                #             if(u_2[current_subflowid]>u_3[current_subflowid]):#EI——sequence=1 rl先行
+                #                 a_final=cwnd_list[current_subflowid][0]
+                #                 # strRLCWND_record.strip()
+                #                 # strRLCWND_record+=" 1"
+                #                 prev_cwnd[current_subflowid]=a_final
+                #                 # rl_count+=1
+                #             else:
+                #                 a_final=cwnd_list[current_subflowid][1]
+                #                 # print(strCLCWND_record)
+                #                 # strCLCWND_record.strip('')
+                #                 # strCLCWND_record+=" 1"
+                #                 # print(strCLCWND_record)
+                #                 prev_cwnd[current_subflowid]=a_final
+                #                 # cl_count+=1
+                #         else:
+                #             a_final=prev_cwnd[current_subflowid]
+                #*****MP-Libra Part end******
 
 
-                action=apply_action(socket, dataRecorder, action,segmentSize,cwnd[0],cwnd[1],ssThresh) # Apply action to environment
+                
+
+                # if current_subflowid  == 0:
+                #     action=map_action(dataRecorder, action,segmentSize,cwnd[0],cwnd[1],subflow1_state,ssThresh) # Apply action to environment
+                # else:
+                #     action=map_action(dataRecorder, action,segmentSize,cwnd[0],cwnd[1],subflow2_state,ssThresh) # Apply action to environment
+                
                 # dataRecorder.add_pair_to_last_record(name="schedulerId", value=action)
 
                 # sleep(3)
+                action= apply_action(socket, a_rl,a_final,subflowstates[current_subflowid])
                 recv_str, this_episode_done = socket.recv() # get new observation and reward
 
 
@@ -413,11 +607,14 @@ if __name__ == "__main__":
 
                 dataRecorder.add_one_record(recv_str)
 
-
-                observation_after_action, reward,thr,rtt= ddpg.extract_observation(dataRecorder,0,observation_before_action)
-                thpt_writer.write(str(dataRecorder.get_latest_data()['subflowid']) + ' ' + str(float(dataRecorder.get_latest_data()['time'])/10e5) + ' ' + str(thr) + '\n')
+                current_subflowid=int(dataRecorder.get_latest_data()['subflowid'])
+                observation_after_action, reward,thr,rtt= ddpg.extract_observation(dataRecorder,current_subflowid,observation_before_action)
+                
+                # thpt_writer.write()
+                thpt_record+=(str(dataRecorder.get_latest_data()['subflowid']) + ' ' + str(float(dataRecorder.get_latest_data()['time'])/10e5) + ' ' + str(thr) + '\n')
+                rtt_record+=(str(dataRecorder.get_latest_data()['subflowid']) + ' ' + str(float(dataRecorder.get_latest_data()['time'])/10e5) + ' ' + str(rtt) + '\n')
                 # print("observation_after_action:"+str(observation_after_action))
-                cwnd2, ssThresh2 = extract_ssThresh(dataRecorder)
+                cwnd2, ssThresh2,subflowstates = extract_ssThresh(dataRecorder)
                 # observation_after_action = nomorlize_obs(observation_after_action, 2147483647, 0)
                 # print("cwnd: "+str(cwnd2[0])+" "+str(cwnd2[1]))
                 # reward,throughput,totalThpt1,totalThpt2 = calculate_reward(dataRecorder)
@@ -436,7 +633,7 @@ if __name__ == "__main__":
                 #     #     var *= .9995
                 #     # print("Update var: "+str(var))
                 #     ddpg.learn()
-                #     # print("learning!")
+                #     print("learning!")
 
                 observation_before_action = observation_after_action
                 # ssThresh = ssThresh2
@@ -444,11 +641,14 @@ if __name__ == "__main__":
 
                 f.write(str(dataRecorder.get_latest_data()["time"]) + ',' + str(reward) + '\n')
                 # f3.write(str(dataRecorder.get_latest_data()["time"]) + ',' + str(throughput[0]) +',' + str(throughput[1])+ '\n')
-                # print("step:" + str(step))
+                print("step:" + str(step))
                 print("")
                 step += 1
             else:
-                apply_action(socket, dataRecorder, [-999,-999],segmentSize,cwnd[0],cwnd[1],ssThresh)
+                if current_subflowid  == 0:
+                    action=apply_action(socket, dataRecorder, action,segmentSize,cwnd[0],cwnd[1],subflow1_state,ssThresh) # Apply action to environment
+                else:
+                    action=apply_action(socket, dataRecorder, action,segmentSize,cwnd[0],cwnd[1],subflow2_state,ssThresh) # Apply action to environment
                 # sleep(0.003)
                 recv_str, this_episode_done = socket.recv()  # get new observation and reward
                 if this_episode_done is True:
@@ -459,19 +659,16 @@ if __name__ == "__main__":
 
                 dataRecorder.add_one_record(recv_str)
 
-        # ddpg.save_model("/home/hong/")
-
 
 
 
         socket.close()
         socket = None
         f.close()
+        # print("resStr:"+thpt_record)
+        thpt_writer.write(thpt_record)
         thpt_writer.close()
+        rtt_writer.write(rtt_record)
+        rtt_writer.close()
 
-        # copyfile("/home/matthew/mptcp_with_machine_learning-master1/mptcp_with_machine_learning-master/Analysis/calculate_reward", '/home/matthew/mptcp_with_machine_learning-master1/mptcp_with_machine_learning-master/Analysis/rl_training_data/' + str(episode_count) + '_calculate_reward')
-        # copyfile("/home/matthew/mptcp_with_machine_learning-master1/mptcp_with_machine_learning-master/Analysis/mptcp_output/mptcp_client", '/home/matthew/mptcp_with_machine_learning-master1/mptcp_with_machine_learning-master/Analysis/rl_training_data/' + str(episode_count) + '_mptcp_client')
-        # copyfile("/home/matthew/mptcp_with_machine_learning-master1/mptcp_with_machine_learning-master/Analysis/mptcp_output/mptcp_drops", '/home/matthew/mptcp_with_machine_learning-master1/mptcp_with_machine_learning-master/Analysis/rl_training_data/' + str(episode_count) + '_mptcp_drops')
-        # copyfile("/home/matthew/mptcp_with_machine_learning-master1/mptcp_with_machine_learning-master/Analysis/mptcp_output/mptcp_server", '/home/matthew/mptcp_with_machine_learning-master1/mptcp_with_machine_learning-master/Analysis/rl_training_data/' + str(episode_count) + '_mptcp_server')
-        # copyfile("/home/matthew/mptcp_with_machine_learning-master1/mptcp_with_machine_learning-master/Analysis/mptcp_output/mptcp_monitor", '/home/matthew/mptcp_with_machine_learning-master1/mptcp_with_machine_learning-master/Analysis/rl_training_data/' + str(episode_count) + '_mptcp_monitor')
         episode_count += 1

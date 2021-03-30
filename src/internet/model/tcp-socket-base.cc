@@ -1352,6 +1352,7 @@ TcpSocketBase::ReceivedAck (Ptr<Packet> packet, const TcpHeader& tcpHeader)
   SequenceNumber32 ackNumber = tcpHeader.GetAckNumber ();
   uint32_t bytesAcked = ackNumber - m_txBuffer->HeadSequence ();
   uint32_t segsAcked  = bytesAcked / m_tcb->m_segmentSize;
+  m_tcb->m_segmentsAcked.push_back(segsAcked);
   m_bytesAckedNotProcessed += bytesAcked % m_tcb->m_segmentSize;
 
   if (m_bytesAckedNotProcessed >= m_tcb->m_segmentSize)
@@ -1427,7 +1428,7 @@ TcpSocketBase::ReceivedAck (Ptr<Packet> packet, const TcpHeader& tcpHeader)
 
               m_tcb->m_ssThresh = m_congestionControl->GetSsThresh (m_tcb,
                                                                     BytesInFlight ());
-              if(m_node->GetId() != 0){//add by matthew
+              if(m_node->GetId() != 0||m_tcb->m_rlState==0){//add by matthew
             	  m_tcb->m_cWnd = m_tcb->m_ssThresh + m_dupAckCount * m_tcb->m_segmentSize;
               }
 
@@ -1446,7 +1447,7 @@ TcpSocketBase::ReceivedAck (Ptr<Packet> packet, const TcpHeader& tcpHeader)
         }
       else if (m_tcb->m_congState == TcpSocketState::CA_RECOVERY)
         { // Increase cwnd for every additional dupack (RFC2582, sec.3 bullet #3)
-    	  if(m_node->GetId() != 0){//add by matthew
+    	  if(m_node->GetId() != 0||m_tcb->m_rlState==0){//add by matthew
     		  m_tcb->m_cWnd += m_tcb->m_segmentSize;
     	  }
           NS_LOG_INFO (m_dupAckCount << " Dupack received in fast recovery mode."
@@ -1526,7 +1527,7 @@ TcpSocketBase::ReceivedAck (Ptr<Packet> packet, const TcpHeader& tcpHeader)
                * fast recovery procedure (i.e., if any duplicate ACKs subsequently
                * arrive, execute step 4 of Section 3.2 of [RFC5681]).
                 */
-        	  if(m_node->GetId() != 0){//add by matthew
+        	  if(m_node->GetId() != 0||m_tcb->m_rlState==0){//add by matthew
         		  m_tcb->m_cWnd = SafeSubtraction (m_tcb->m_cWnd, bytesAcked);
 
 
@@ -1564,7 +1565,7 @@ TcpSocketBase::ReceivedAck (Ptr<Packet> packet, const TcpHeader& tcpHeader)
             }
           else if (ackNumber >= m_recover)
             { // Full ACK (RFC2582 sec.3 bullet #5 paragraph 2, option 1)
-        	  if(m_node->GetId() != 0){//add by matthew
+        	  if(m_node->GetId() != 0||m_tcb->m_rlState==0){//add by matthew
         		  m_tcb->m_cWnd = std::min (m_tcb->m_ssThresh.Get (),
                                         BytesInFlight () + m_tcb->m_segmentSize);
         	  }
@@ -3081,7 +3082,7 @@ TcpSocketBase::Retransmit ()
       m_congestionControl->CongestionStateSet (m_tcb, TcpSocketState::CA_LOSS);
       m_tcb->m_congState = TcpSocketState::CA_LOSS;
       m_tcb->m_ssThresh = m_congestionControl->GetSsThresh (m_tcb, BytesInFlight ());
-      if(m_node->GetId() != 0){//add by matthew
+      if(m_node->GetId() != 0||m_tcb->m_rlState==0){//add by matthew
     	  m_tcb->m_cWnd = m_tcb->m_segmentSize;
       }
     }

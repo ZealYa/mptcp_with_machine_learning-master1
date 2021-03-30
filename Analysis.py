@@ -12,6 +12,7 @@ def proprocess_rtt_data(file_path):
     record0 = []
     record1 = []
     valid = [False, False]
+    max_rtt=0.0
     with open(file_path, 'rt') as txtfile:
         spamreader = csv.reader(txtfile, delimiter=',')
         # print(spamreader)
@@ -25,20 +26,23 @@ def proprocess_rtt_data(file_path):
             subflow=row_list[0]
             timestamp=row_list[1]
             rtt=row_list[2]
+            f_rtt=float(rtt)
+            if(f_rtt>max_rtt):
+                max_rtt=f_rtt
             if subflow=='0':
-                record0.append([float(timestamp), float(rtt)/1000])
+                record0.append([float(timestamp), float(rtt)])
             if subflow=='1':
-                record1.append([float(timestamp), float(rtt)/1000])
+                record1.append([float(timestamp), float(rtt)])
 
     columns0 = ['timestamp','rtt']
 
     rtt_records0 = pd.DataFrame(record0, columns=columns0)
     rtt_records1 = pd.DataFrame(record1, columns=columns0)
+    print("maxrtt:"+str(max_rtt))
+    return rtt_records0,rtt_records1,max_rtt
 
-    return rtt_records0,rtt_records1
 
-
-def AnalyzeClientrtt(rtt_records0,rtt_records1,duration,str_mpcc_algo):
+def AnalyzeClientrtt(rtt_records0,rtt_records1,duration,str_mpcc_algo,max_rtt):
     client_rtt0 = rtt_records0[["timestamp", "rtt"]].values
     client_rtt1 = rtt_records1[["timestamp", "rtt"]].values
 
@@ -53,9 +57,9 @@ def AnalyzeClientrtt(rtt_records0,rtt_records1,duration,str_mpcc_algo):
     plt.xlabel('Time / s', fontsize = 14, color = 'black')
     plt.ylabel('rtt / ms', fontsize = 14, color = 'black')
     plt.xlim(0,duration)
-    plt.ylim(0,5000)
+    plt.ylim(0,max_rtt*1.1)
     x_major_locator=MultipleLocator(10)
-    y_major_locator=MultipleLocator(500)
+    y_major_locator=MultipleLocator(max_rtt*1.1/10)
     ax=plt.gca()
     ax.xaxis.set_major_locator(x_major_locator)
     ax.yaxis.set_major_locator(y_major_locator)
@@ -211,7 +215,7 @@ if __name__ == '__main__':
         str_mpcc_algo = "WVEGAS"
 
 
-    plt.figure(figsize=(15, 24))
+    plt.figure(figsize=(8, 14))
     plt.subplot(3, 1, 1)
     cWnd_records0,cWnd_records1 ,max_cwnd= proprocess_cWnd_data('cwnd_data.txt')
     AnalyzeClientCwnd(cWnd_records0,cWnd_records1,duration,str_mpcc_algo,max_cwnd)
@@ -219,14 +223,14 @@ if __name__ == '__main__':
 
     plt.subplot(3, 1, 2)
 
-    throughput_records0, throughput_records1 ,max_thr= proprocess_throughput_data('thpt_py_recorder.txt')
+    throughput_records0, throughput_records1 ,max_thr= proprocess_throughput_data('throughput_data.txt')
     AnalyzeClientthroughput(throughput_records0, throughput_records1,duration,str_mpcc_algo,max_thr)
 
     # plt.figure(figsize=(20, 8))
     plt.subplot(3, 1, 3)
 
-    rtt_records0, rtt_records1 = proprocess_rtt_data('rtt_data.txt')
-    AnalyzeClientrtt(rtt_records0, rtt_records1,duration,str_mpcc_algo)
+    rtt_records0, rtt_records1,max_rtt = proprocess_rtt_data('rtt_data.txt')
+    AnalyzeClientrtt(rtt_records0, rtt_records1,duration,str_mpcc_algo,max_rtt)
     plt.tight_layout()
 
     plt.savefig(str_mpcc_algo+" "+str(duration))

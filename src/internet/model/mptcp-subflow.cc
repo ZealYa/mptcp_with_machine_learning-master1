@@ -160,6 +160,7 @@ MpTcpSubflow::MpTcpSubflow(const MpTcpSubflow& sock)
   m_dssFlags(0),
   m_routeId(0),
   m_metaSocket(0),
+  m_lastReceivedDataTime(0),
   m_backupSubflow(sock.m_backupSubflow)
 {
   NS_LOG_FUNCTION (this << &sock);
@@ -175,7 +176,8 @@ MpTcpSubflow::MpTcpSubflow () :
     m_masterSocket(false),
     m_localNonce(0),
     m_id(0),
-    m_dssFlags(0)
+    m_dssFlags(0),
+    m_lastReceivedDataTime(0)
 {
   NS_LOG_FUNCTION(this);
 //  throughput_data.open("throughput_data.txt", ios::trunc);
@@ -1337,8 +1339,8 @@ MpTcpSubflow::ReceivedData(Ptr<Packet> p, const TcpHeader& tcpHeader)
 //  setLastReceivedDataTime(Simulator::Now ().GetSeconds());
 //
 //  std::cout<<"ipv4 address "<<GetEndpoint()->GetLocalAddress()<<endl;
-  GetMeta()->LogThpt(this);
-
+  // GetMeta()->LogThpt(this);
+ 
 
 
   Ptr<MpTcpMapping> mapping = m_RxMappings.GetMappingForSSN(tcpHeader.GetSequenceNumber());

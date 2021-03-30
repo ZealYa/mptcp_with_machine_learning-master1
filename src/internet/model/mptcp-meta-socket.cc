@@ -201,8 +201,8 @@ MpTcpMetaSocket::MpTcpMetaSocket() :  TcpSocketImpl()
   m_subflowConnectionFailure    = MakeNullCallback<void, Ptr<MpTcpSubflow> >();
   m_subflowAdded = MakeNullCallback<void, Ptr<MpTcpSubflow>, bool> ();
   cwnd_data.open("cwnd_data.txt", ios::trunc);
-  rtt_data.open("rtt_data.txt", ios::trunc);
-  throughput_data.open("throughput_data.txt", ios::trunc);
+  // rtt_data.open("rtt_data.txt", ios::trunc);
+  // throughput_data.open("throughput_data.txt", ios::trunc);
 
 
 
@@ -262,8 +262,8 @@ MpTcpMetaSocket::MpTcpMetaSocket(const MpTcpMetaSocket& sock) : TcpSocketImpl(so
   GenerateUniqueMpTcpKey();
 
   cwnd_data.open("cwnd_data.txt", ios::trunc);
-  rtt_data.open("rtt_data.txt", ios::trunc);
-  throughput_data.open("throughput_data.txt", ios::trunc);
+  // rtt_data.open("rtt_data.txt", ios::trunc);
+  // throughput_data.open("throughput_data.txt", ios::trunc);
 
   // Reset all callbacks to null
   Callback<void, Ptr<MpTcpMetaSocket>> vPS = MakeNullCallback<void, Ptr<MpTcpMetaSocket>> ();
@@ -283,8 +283,8 @@ MpTcpMetaSocket::~MpTcpMetaSocket(void)
   CancelAllEvents();
 
   cwnd_data.close();
-  throughput_data.close();
-  rtt_data.close();
+  // throughput_data.close();
+  // rtt_data.close();
   m_subflowConnectionSucceeded = MakeNullCallback<void, Ptr<MpTcpSubflow> >();
   m_subflowConnectionFailure = MakeNullCallback<void, Ptr<MpTcpSubflow>>();
   m_subflowConnectionCreated = MakeNullCallback<void, Ptr<MpTcpSubflow>, const Address&>();
@@ -646,13 +646,13 @@ void MpTcpMetaSocket::LogThpt(Ptr<MpTcpSubflow> sf){//add by matthew
 
 	  		uint32_t subflowWindow = subflow->AvailableWindow(); // AvailableWindow = cWnd - (SND.NXT - SND.UNA)
 
-	  		if(throughput_data.is_open()){
+// 	  		if(throughput_data.is_open()){
 
-	  		//		cwnd_data<<subflow->m_id<<" "<<Simulator::Now ().GetSeconds ()<<" "<<newCwnd;
+// 	  		//		cwnd_data<<subflow->m_id<<" "<<Simulator::Now ().GetSeconds ()<<" "<<newCwnd;
 
-//	  				std::cout<<"throughput_data"<<subflow->m_id<<" "<<Simulator::Now ().GetSeconds ()<<" "<<subflow->getThpt()<<endl;
-	  				throughput_data<<subflow->m_id<<" "<<Simulator::Now ().GetSeconds ()<<" "<<subflow->getThpt()<<endl;
-	  		}
+// //	  				std::cout<<"throughput_data"<<subflow->m_id<<" "<<Simulator::Now ().GetSeconds ()<<" "<<subflow->getThpt()<<endl;
+// 	  				throughput_data<<subflow->m_id<<" "<<Simulator::Now ().GetSeconds ()<<" "<<subflow->getThpt()<<endl;
+// 	  		}
 
 	    //      std::"last ack timestamp:"<<subflow->m_lastAckEvent.GetTs()<<endl;
 	    //      socket.add("window"+std::to_string(index), subflowWindow);
@@ -1133,9 +1133,21 @@ void MpTcpMetaSocket::RlInteractModule(int subflowid)
 	}
 //	this->m_subflows[0]->GetTcb()->)
 	if(subflowid==1){
-	m_rlInterEvent1=Simulator::Schedule(MilliSeconds(this->m_subflows[0]->GetRttEstimator()->GetEstimate().GetMicroSeconds()/1000),&MpTcpMetaSocket::RlInteractModule,this,1);
+    int p_multi=1;
+    if(this->m_subflows[0]->m_tcb->m_rlState!=0){
+       p_multi=2;
+       std::cout<<"EI!"<<endl;
+    }
+    std::cout<<"[CPP]:Next subflow0 event will be after:"<<MilliSeconds(this->m_subflows[0]->GetRttEstimator()->GetEstimate().GetMicroSeconds()/1000/p_multi)<<endl;
+	  m_rlInterEvent1=Simulator::Schedule(MilliSeconds(this->m_subflows[0]->GetRttEstimator()->GetEstimate().GetMicroSeconds()/1000/p_multi),&MpTcpMetaSocket::RlInteractModule,this,1);
 	}else{
-	m_rlInterEvent2=Simulator::Schedule(MilliSeconds(this->m_subflows[1]->GetRttEstimator()->GetEstimate().GetMicroSeconds()/1000),&MpTcpMetaSocket::RlInteractModule,this,2);
+    int p_multi=1;
+    if(this->m_subflows[1]->m_tcb->m_rlState!=0){
+       p_multi=2;
+       std::cout<<"EI!"<<endl;
+    }
+    std::cout<<"[CPP]:Next subflow1 event will be after:"<<MilliSeconds(this->m_subflows[1]->GetRttEstimator()->GetEstimate().GetMicroSeconds()/1000/p_multi)<<endl;
+	  m_rlInterEvent2=Simulator::Schedule(MilliSeconds(this->m_subflows[1]->GetRttEstimator()->GetEstimate().GetMicroSeconds()/1000/p_multi),&MpTcpMetaSocket::RlInteractModule,this,2);
 	}
 
 
@@ -1744,13 +1756,13 @@ MpTcpMetaSocket::ReceivedAck(Ptr<MpTcpSubflow> sf, const SequenceNumber64& dack)
 
 		uint32_t subflowWindow = subflow->AvailableWindow(); // AvailableWindow = cWnd - (SND.NXT - SND.UNA)
 
-		if(rtt_data.is_open()){
+// 		if(rtt_data.is_open()){
 
-		//		cwnd_data<<subflow->m_id<<" "<<Simulator::Now ().GetSeconds ()<<" "<<newCwnd;
+// 		//		cwnd_data<<subflow->m_id<<" "<<Simulator::Now ().GetSeconds ()<<" "<<newCwnd;
 
-//				std::cout<<subflow->m_id<<" "<<Simulator::Now ().GetSeconds ()<<" "<<subflow->GetRttEstimator()->GetEstimate().GetMicroSeconds()<<endl;
-				rtt_data<<subflow->m_id<<" "<<Simulator::Now ().GetSeconds ()<<" "<<subflow->GetRttEstimator()->GetEstimate().GetMicroSeconds()<<endl;
-		}
+// //				std::cout<<subflow->m_id<<" "<<Simulator::Now ().GetSeconds ()<<" "<<subflow->GetRttEstimator()->GetEstimate().GetMicroSeconds()<<endl;
+// 				rtt_data<<subflow->m_id<<" "<<Simulator::Now ().GetSeconds ()<<" "<<subflow->GetRttEstimator()->GetEstimate().GetMicroSeconds()<<endl;
+// 		}
 		if(cwnd_data.is_open()){
 
   //		cwnd_data<<subflow->m_id<<" "<<Simulator::Now ().GetSeconds ()<<" "<<newCwnd;
@@ -2516,7 +2528,7 @@ MpTcpMetaSocket::SendStates(rl::InterfaceToRL& socket,int subflowid){
 //  std::cout<<"start send!"<<endl;
   uint32_t nbOfSubflows = this->GetNSubflows();
   NS_ASSERT (nbOfSubflows == m_subflows.size()); // Hong Jiaming: Just for debug
- std::cout << "Hong Jiaming 21: number of active subflows:" << nbOfSubflows << std::endl;
+//  std::cout << "Hong Jiaming 21: number of active subflows:" << nbOfSubflows << std::endl;
   // RttHistory_t
   // socket.add("time", Simulator::Now().GetNanoSeconds());
   socket.add("ssn", seq_num);
@@ -2531,39 +2543,55 @@ MpTcpMetaSocket::SendStates(rl::InterfaceToRL& socket,int subflowid){
   socket.add("nextTxSeqMeta", this->m_nextTxSequence.Get().GetValue());
   socket.add("totalCwndMeta", this->GetTotalCwnd());
   socket.add("subflowid",uint32_t(subflowid-1));
+  
   //GetTotalCwnd
 
   for(uint32_t index = 0; index < this->GetNSubflows(); index++){
     Ptr<MpTcpSubflow> subflow = this->GetSubflow(index);
     Ptr<TcpSocketState> tcb = subflow->GetTcb();
     /* calculate Throughput */
-    double segmentsAckedSum = std::accumulate(tcb->m_segmentsAcked.begin(), tcb->m_segmentsAcked.end(), 0);
+    
 
     if(subflow->rtt_ms<1){
     	subflow->rtt_ms=subflow->GetRttEstimator()->GetEstimate().GetMicroSeconds()/1000;
     }
-    float throughput = (segmentsAckedSum * tcb->m_segmentSize)*8 / subflow->rtt_ms;
+    
+    int multi_p=1;
+    if(subflow->m_tcb->m_rlState!=0){
+      multi_p=2;
+    }
+    
+    
+    
 
-    /* calculate Lossrate */
-    double lossTimesSum = std::accumulate(tcb->m_segmentsLoss.begin(), tcb->m_segmentsLoss.end(), 0);
+    float throughput =0;
+    float loss_rate=0;
+    float unAck=0;
+    if(index+1==subflowid){
+      double segmentsAckedSum = std::accumulate(tcb->m_segmentsAcked.begin(), tcb->m_segmentsAcked.end(), 0);
+      throughput = (segmentsAckedSum * tcb->m_segmentSize)*8 / ((Simulator::Now ().GetSeconds()-subflow->getLastReceivedDataTime())*1000);
+      // std::cout<<"subflowid: "<<subflowid<<" throughput:"<<throughput<<endl;
+    
+      subflow->setLastReceivedDataTime(Simulator::Now ().GetSeconds());
+      /* calculate Lossrate */
+      double lossTimesSum = std::accumulate(tcb->m_segmentsLoss.begin(), tcb->m_segmentsLoss.end(), 0);
 
-    float loss_rate;
-    float unAck;
+      
 
 //    std::cout<<"send! index:"<<index<< "tcb->m_segmentsAcked size: "<<tcb->m_segmentsAcked.size()<<" lossTimesSum"<<lossTimesSum<<" rtt_ms:"<<subflow->rtt_ms<<endl;
-    if(throughput>0){
-    	 loss_rate = (lossTimesSum * tcb->m_segmentSize)*8 / subflow->rtt_ms /throughput;
-       unAck = subflow->UnAckDataCount()/ subflow->rtt_ms /throughput;
-    }else{
-    	 loss_rate = 0;
-       unAck=0;
+      if(throughput>0){
+    	  loss_rate = (lossTimesSum * tcb->m_segmentSize)*8 / subflow->rtt_ms /throughput;
+        unAck = subflow->UnAckDataCount()/ subflow->rtt_ms /throughput;
+      }else{
+    	  loss_rate = 0;
+        unAck=0;
+      }
+      tcb->m_segmentsAcked.clear();
+      tcb->m_segmentsLoss.clear();
     }
 
 
-    if(index+1==subflowid){
-        	tcb->m_segmentsAcked.clear();
-        	tcb->m_segmentsLoss.clear();
-    }
+    // std::cout<<"index:"<<index<<"subflowid: "<<subflowid<<" throughput:"<<throughput<<endl;
 
 //    std::cout<<"send! index:"<<index<< "tcb->m_segmentsAcked size: "<<tcb->m_segmentsAcked.size()<<" lossTimesSum"<<lossTimesSum<<" rtt_ms:"<<subflow->rtt_ms<<endl;
 
@@ -2582,6 +2610,7 @@ MpTcpMetaSocket::SendStates(rl::InterfaceToRL& socket,int subflowid){
     socket.add("availableTxBuffer"+std::to_string(index), subflow->GetTxBuffer()->Available()); // How many bytes usable in txBuffer
     socket.add("throughput"+std::to_string(index), throughput);
     socket.add("loss_rate"+std::to_string(index), loss_rate);
+    socket.add("subflowState"+std::to_string(index),uint32_t(tcb->m_rlState));
     // std::cout << "Hong Jiaming 15: send rtt=" << subflow->GetRttEstimator()->GetEstimate().GetMicroSeconds() << std::endl;
   }
 //  std::cout<<"send!"<<endl;
@@ -2637,13 +2666,22 @@ void
 //  std::cout<<"recv_str"<<recv_str<<endl;
 
   vector<string> strArray=split(recv_str,",");
-//  std::cout<<"strArray[0]"<<strArray[0]<<"subflow id:"<<subflowid<<endl;
+  std::cout<<"strArray[0]"<<strArray[0]<<"subflow state:"<<strArray[1]<<endl;
 //  if(strArray.size() != 1){
-  // if(subflowid==1){
-	//   this->m_subflows[0]->GetTcb()->m_cWnd=20000;//=uint32_t(std::stoi(strArray[0]));
-  // }else{
-	//   this->m_subflows[1]->GetTcb()->m_cWnd=20000;//uint32_t(std::stoi(strArray[0]));
-  // }
+  if(subflowid==1){
+	  this->m_subflows[0]->GetTcb()->m_cWnd=uint32_t(std::stoi(strArray[0]));
+    // this->m_subflows[0]->GetTcb()->m_cWnd=50000;
+  }else{
+	  this->m_subflows[1]->GetTcb()->m_cWnd=uint32_t(std::stoi(strArray[0]));
+    // this->m_subflows[1]->GetTcb()->m_cWnd=50000;
+  }
+  if(subflowid==1){
+	  // this->m_subflows[0]->GetTcb()->m_rlState=uint32_t(std::stoi(strArray[1]));//=uint32_t(std::stoi(strArray[0]));
+    this->m_subflows[0]->GetTcb()->m_rlState=1;
+  }else{
+	  // this->m_subflows[1]->GetTcb()->m_rlState=uint32_t(std::stoi(strArray[1]));//uint32_t(std::stoi(strArray[0]));
+    this->m_subflows[1]->GetTcb()->m_rlState=1;
+  }
   // this->m_subflows[1]->GetTcb()->m_cWnd=1500;
 //  std::cout<<"succeed!"<<endl;
 

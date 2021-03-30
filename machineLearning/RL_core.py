@@ -196,9 +196,9 @@ class DDPG:
             self.min_rtt=rtt_min
 
         
-        reward  = thr_n_min-1*(rtt_min-self.min_rtt)-10*loss_rate_n_min
+        reward  = thr_n_min-5*(rtt_min-self.min_rtt)-10*loss_rate_n_min
         print("reward:"+str(reward)+" thr_n_min:"+str(thr_n_min)+ " rtt_min:"+str(rtt_min)+" self.min_rtt :"+str(self.min_rtt)+"  delta_rtt"+str(rtt_min-self.min_rtt))
-        print("unAck:"+str(unAck_n_min))
+        # print("unAck:"+str(unAck_n_min))
         if self.max_bw!=0:
             state[0]=thr_n_min/self.max_bw
             # tmp=pacing_rate_n_min/self.max_bw
@@ -343,53 +343,72 @@ def extract_ssThresh(dataRecorder):
     #     # name = "rtt" + str(i)
     #     # observation[i * 2 + 2] = value_dic[name]
     cwnd = np.zeros((2))
+    subflowstates = np.zeros((2))
     for i in range(value_dic["nbOfSubflows"]):
         name = "cWnd" + str(i)
         cwnd[i] = value_dic[name]
+        name = "subflowState" + str(i)
+        subflowstates[i]=value_dic[name]
         # name = "rtt" + str(i)
         # observation[i * 2 + 2] = value_dic[name]
         # segmentSize=value_dic["seg"]
-    return cwnd,2000
+    return cwnd,2000,subflowstates
 
-def action_translator(dataRecorder, action):
+def action_translator(action,subflow_state):
     # action is a numpy array, so we need translator
     # let's set return value "action" to be an integer
     # 0 choose subflow 0
     # 1 choose subflow 1
     # 2 choose subflow 2
     # print type(action), action
-    return "["+str(int(action[0]))+"]"
+    return "["+str(int(action[0]))+","+str(subflow_state)+"]"
 
-def apply_action(interacter_socket, dataRecorder, action,segmentSize,cwnd1,cwnd2,ssThresh):
-    # print("apply_action:cwnd:"+str(cwnd1)+","+str(cwnd2)+" ssThresh:"+str(ssThresh))
+
+def map_action(dataRecorder, action,segmentSize,cwnd,target):
     dataRecorder.action.append(action)
+    action2=action
+    # action_apply=action*2
+    new_cWnd = int(cwnd*math.pow(4,action))
+    if cwnd<target:
+        if target*1.0/cwnd >2:
+            new_cWnd=cwnd*random.uniform(1.5,3)
+        else:
+            new_cWnd=cwnd*random.uniform(1.0,1.1)
+        
+    elif cwnd>target:
+        if cwnd*1.0/target >2:
+            new_cWnd=cwnd*random.uniform(0.1,0.4)
+        else:
+            new_cWnd=cwnd*random.uniform(0.9,1)
+    else:
+        new_cWnd=cwnd
+    # new_cWnd = int(cwnd*1.2)
+    new_cWnd=np.clip(new_cWnd,segmentSize,BOUND)
+    return new_cWnd
+
+
+def apply_action(interacter_socket, action,new_cWnd,subflow_state):
+    # print("apply_action:cwnd:"+str(cwnd1)+","+str(cwnd2)+" ssThresh:"+str(ssThresh))
+    print("[RL_core.py]:apply action:"+str(new_cWnd))
+    # dataRecorder.action.append(action)
     action2=action
 
 
-    if action[0]== -999:
+    if action== -999:
         tx_str = "[-999,-999]"
     else:
 
-        action_apply=action*2
-
-        new_cWnd1 = cwnd1*math.pow(4,action)
-        # print("cwnd1:"+str(cwnd1)+" action:"+str(action)+"new_cWnd1:"+str(new_cWnd1))
-
-        # new_cWnd2 = int(BOUND * action_apply[1])
-
-
-
-        action = [int(new_cWnd1)]
-        action = np.clip(action,segmentSize,BOUND)
+        action = [int(new_cWnd)]
+        # action = np.clip(action,segmentSize,BOUND)
 
 
         # print("action sent:" + str(action))
-        tx_str = action_translator(dataRecorder, action)
+        tx_str = action_translator(action, subflow_state) 
 
 
 
 
-    print(tx_str)
+    # print(tx_str)
     # print dataRecorder.get_latest_subflow_data()
     # print '-- apply action: dfdfddf'
     # print(tx_str+" over")

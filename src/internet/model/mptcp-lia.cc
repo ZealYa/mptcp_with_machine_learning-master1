@@ -119,10 +119,10 @@ MpTcpLia::IncreaseWindow (Ptr<TcpSocketState> tcb, uint32_t segmentsAcked)
 
   // Increase of cwnd based on current phase (slow start or congestion avoidance)
 //  std::cout<<"segmentsAcked"
-  tcb->m_segmentsAcked.push_back(segmentsAcked);//m_segmentsAcked.push_back(segmentsAcked);
+  // tcb->m_segmentsAcked.push_back(segmentsAcked);//m_segmentsAcked.push_back(segmentsAcked);
 
 
- if(DynamicCast<MpTcpMetaSocket>(tcb->m_socket)->GetNode()->GetId() != 0){//为了让LIA不干扰RL学习，因此让本机节点cwnd无法被LIA增加
+ if(DynamicCast<MpTcpMetaSocket>(tcb->m_socket)->GetNode()->GetId() != 0||tcb->m_rlState==0){//为了让LIA不干扰RL学习，因此让本机节点cwnd无法被LIA增加
 	  if (tcb->m_cWnd < tcb->m_ssThresh)
 	    {
 	      tcb->m_cWnd += tcb->m_segmentSize;

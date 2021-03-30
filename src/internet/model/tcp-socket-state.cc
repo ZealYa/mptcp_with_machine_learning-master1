@@ -57,7 +57,8 @@ namespace ns3
   m_congState (CA_OPEN),
   m_highTxMark (0),
   // Change m_nextTxSequence for non-zero initial sequence number
-  m_nextTxSequence (0)
+  m_nextTxSequence (0),
+  m_rlState (0)
   {
   }
   
@@ -72,7 +73,8 @@ namespace ns3
   m_lastAckedSeq (other.m_lastAckedSeq),
   m_congState (other.m_congState),
   m_highTxMark (other.m_highTxMark),
-  m_nextTxSequence (other.m_nextTxSequence)
+  m_nextTxSequence (other.m_nextTxSequence),
+  m_rlState(other.m_rlState)
   {
   }
   
